@@ -37,9 +37,9 @@ Die Stimme (Piper „Thorsten“, offline) wird beim ersten Lauf heruntergeladen
 - Oder per Git: `git clone -b claude/mathe-lernspiel-grundschule-wwonn7 https://github.com/klassenmedia/mathe-lehrer.git`
 
 ## 3D-Figuren (aktueller Stand: nur Oskar, die Eule)
-**Neueste Version:** `eule()` in `videos/assets/figuren.js` – glatte, runde Eule mit Federmuster, Bernstein-Augen mit Lidern (blinzeln), einem Schnabel (Unterteil bewegt sich nur beim Sprechen), Doktorhut und Flügeln aus einem Stück, die an der Schulter ansetzen und beim Zeigen/Winken aufklappen.
-- Posen über `update(t, {talk, wave, point, pointL, hop, look, intro})`.
-- Vorschau ohne Video: `cd videos/assets && python3 -m http.server 8765`, dann `http://localhost:8765/eule-vorschau.html#point:1` (oder `#rest:1`, `#wave:1`).
+**Neueste Version:** `eule()` in `videos/assets/figuren.js` – runde Eule im Pixar-Stil: eiförmiger Körper mit heller, gefleckter Brust, großer Kopf mit hellem Gesichtsschleier, glänzende Bernstein-Augen (Augäpfel drehen sich zum Blicken, Lider leicht verschlafen, blinzeln), kurzer gebogener Schnabel, Krallenfüße, Doktorhut mit Quaste, Flügel aus einem Stück, die beim Zeigen/Winken aufklappen. Weiches Studio-Umgebungslicht in `buehne(…, { weich: true })`.
+- Posen über `update(t, {talk, wave, point, pointL, hop, look, intro, kopf, nicken, neigen, blick, staunen, lehnen})`. `kopf`/`nicken`/`neigen`/`lehnen` jeweils −1 … 1, `blick: [x, y]` (−1 … 1, ohne Angabe folgt der Blick der Kopfdrehung), `staunen` 0 … 1 (Augen weit auf, Brauen hoch).
+- Vorschau ohne Video: `cd videos/assets && python3 -m http.server 8765`, dann `http://localhost:8765/eule-vorschau.html#point:1` (oder `#rest:1`, `#wave:1`, `#links:1`, `#hoch:1`, `#schraeg:1`, `#live` = Kopf und Augen bewegen sich dauernd).
 - Bühne mit weichen Schatten: `buehne(canvas, 1920, 1080, { weich: true })`.
 - Video-Drehbuch mit der Eule: `videos/skripte_figuren.py` (Video `0-oskar-stellt-sich-vor`) – **noch nicht mit den neuen Flügeln gerendert**: `cd videos && python3 render.py 0-oskar-stellt-sich-vor`.
 - Offen: Flügel noch feiner (Form/Muster), Oskar in die Erklärvideos einbauen (z. B. am Rand, zeigt auf die Rechnung), bessere Stimme.

@@ -149,139 +149,233 @@ export function zacki(){
 
 
 // ---------- Oskar (glatte Version): runde, weich beleuchtete Eule ----------
-function federTextur(base, linie, seed, groesse = 34){
-  const c = document.createElement("canvas"); c.width = c.height = 512; const g = c.getContext("2d"), r = prng(seed);
-  g.fillStyle = base; g.fillRect(0, 0, 512, 512);
-  for (let row = -1; row < 512 / (groesse * .55) + 2; row++)
-    for (let col = -1; col < 512 / groesse + 2; col++){
-      const x = col * groesse + (row % 2) * groesse / 2 + (r() - .5) * 5, y = row * groesse * .55;
-      g.beginPath(); g.arc(x, y, groesse * .52, .15, Math.PI - .15);
-      g.strokeStyle = linie; g.globalAlpha = .28 + r() * .22; g.lineWidth = 3.2; g.stroke();
+// Kugel-Texturen (Leinwand 2:1): die Vorderseite (+z) liegt bei u = .25 (Kugel) bzw. u = .5 (Lathe).
+const leinwand = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return [c, c.getContext("2d")]; };
+const alsTextur = (c, wrap = true) => {
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  if (wrap) t.wrapS = THREE.RepeatWrapping; return t;
+};
+// Kleine, weiche Federn als Schuppenreihen; dichte = Abstand in Pixeln.
+function federn(g, r, { x0 = 0, y0 = 0, w, h, dichte = 22, dunkel = "#3d2210", hell = "#a87a52", alpha = .5 }){
+  for (let y = y0 - dichte; y < y0 + h + dichte; y += dichte * .6)
+    for (let x = x0 - dichte; x < x0 + w + dichte; x += dichte){
+      const px = x + ((y / dichte | 0) % 2) * dichte / 2 + (r() - .5) * dichte * .3, py = y + (r() - .5) * dichte * .2, s = dichte * (.5 + r() * .15);
+      g.globalAlpha = alpha * (.5 + r() * .5); g.fillStyle = hell;
+      g.beginPath(); g.ellipse(px, py - s * .25, s * .55, s * .45, 0, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = alpha * (.7 + r() * .3); g.strokeStyle = dunkel; g.lineWidth = Math.max(1.5, dichte * .09);
+      g.beginPath(); g.arc(px, py - s * .3, s * .62, .25, Math.PI - .25); g.stroke();
     }
   g.globalAlpha = 1;
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
 }
-const PM = (o) => new THREE.MeshPhysicalMaterial({ roughness: .78, metalness: 0, ...o });
+// Rumpf rundum braun gefiedert, unten vorne heller Verlauf bis zum fast weißen Bauch (keine Flecken)
+function koerperTextur(){
+  const [c, g] = leinwand(1024, 1024), r = prng(11);
+  const grund = g.createLinearGradient(0, 0, 0, 1024); grund.addColorStop(0, "#6e4527"); grund.addColorStop(1, "#5e3a20");
+  g.fillStyle = grund; g.fillRect(0, 0, 1024, 1024);
+  federn(g, r, { w: 1024, h: 1024, dichte: 26, dunkel: "#3a200e", hell: "#80583a", alpha: .3 });
+  g.save(); g.scale(1, 1.6);                                              // Verlauf wird mit gestreckt: Mitte landet bei y ≈ 960
+  const hell = g.createRadialGradient(512, 600, 30, 512, 600, 230);
+  hell.addColorStop(0, "#f0dcbc"); hell.addColorStop(.62, "#d9b78c"); hell.addColorStop(1, "rgba(217,183,140,0)");
+  g.fillStyle = hell; g.beginPath(); g.arc(512, 600 / 1.6, 230, 0, Math.PI * 2); g.fill(); g.restore();
+  const bauch = g.createRadialGradient(512, 880, 20, 512, 880, 180);
+  bauch.addColorStop(0, "#fbf3e4"); bauch.addColorStop(1, "rgba(251,243,228,0)");
+  g.fillStyle = bauch; g.fillRect(250, 650, 524, 374);
+  federn(g, r, { x0: 330, y0: 360, w: 364, h: 600, dichte: 20, dunkel: "#b08458", hell: "#fff4e2", alpha: .2 });
+  return alsTextur(c);
+}
+function kopfTextur(){
+  const [c, g] = leinwand(1024, 512), r = prng(12);
+  g.fillStyle = "#6c4528"; g.fillRect(0, 0, 1024, 512);
+  federn(g, r, { w: 1024, h: 512, dichte: 18, dunkel: "#3a200e", hell: "#86603e", alpha: .3 });
+  for (let i = 0; i < 260; i++){                                         // feine Strichel auf dem Scheitel
+    const x = r() * 1024, y = r() * 220;
+    g.globalAlpha = .35; g.strokeStyle = r() < .5 ? "#2f190b" : "#c49a6c"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + (r() - .5) * 4, y + 8 + r() * 8); g.stroke();
+  }
+  g.globalAlpha = 1; return alsTextur(c);
+}
+// Gesichtsschleier: hell, mit strahlenförmigen Federn um das Auge und dunklem Rand
+function schleierTextur(){
+  const [c, g] = leinwand(1024, 512), r = prng(13), cx = 256, cy = 256, grad = 512 / 180;
+  g.fillStyle = "#6e4527"; g.fillRect(0, 0, 1024, 512);
+  const rand = 72 * grad, innen = 64 * grad;
+  g.fillStyle = "#5a3519"; g.beginPath(); g.arc(cx, cy, rand, 0, Math.PI * 2); g.fill();
+  const f = g.createRadialGradient(cx, cy, 10, cx, cy, innen);
+  f.addColorStop(0, "#fbefdc"); f.addColorStop(.7, "#f0dcbd"); f.addColorStop(1, "#d6b58a");
+  g.fillStyle = f; g.beginPath(); g.arc(cx, cy, innen, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 220; i++){
+    const a = r() * Math.PI * 2, r0 = (20 + r() * 25) * grad, r1 = r0 + (14 + r() * 18) * grad;
+    g.globalAlpha = .22; g.strokeStyle = r() < .6 ? "#b48a5e" : "#ffffff"; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.stroke();
+  }
+  g.globalAlpha = 1; return alsTextur(c);
+}
+// Augapfel: großes Schwarz, Bernstein-Ring, dunkler Außenrand – dreht sich zum Blicken
+function augenTextur(){
+  const [c, g] = leinwand(1024, 512), cx = 256, cy = 256, grad = 512 / 180;
+  g.fillStyle = "#1a0d05"; g.fillRect(0, 0, 1024, 512);
+  const iris = g.createRadialGradient(cx, cy, 30 * grad, cx, cy, 56 * grad);
+  iris.addColorStop(0, "#7a3a08"); iris.addColorStop(.18, "#e08a1c"); iris.addColorStop(.62, "#f7b43a"); iris.addColorStop(.86, "#c4701a"); iris.addColorStop(1, "#3a1a06");
+  g.fillStyle = iris; g.beginPath(); g.arc(cx, cy, 56 * grad, 0, Math.PI * 2); g.fill();
+  for (let i = 0; i < 90; i++){                                          // Iris-Fasern
+    const a = i / 90 * Math.PI * 2;
+    g.globalAlpha = .18; g.strokeStyle = i % 2 ? "#fff0b0" : "#8a4510"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(cx + Math.cos(a) * 33 * grad, cy + Math.sin(a) * 33 * grad); g.lineTo(cx + Math.cos(a) * 52 * grad, cy + Math.sin(a) * 52 * grad); g.stroke();
+  }
+  g.globalAlpha = 1; g.fillStyle = "#050307"; g.beginPath(); g.arc(cx, cy, 31 * grad, 0, Math.PI * 2); g.fill();
+  return alsTextur(c);
+}
+// Flügel: Leinwand oben = Schulter, unten = Federspitzen
+function fluegelTextur(){
+  const [c, g] = leinwand(512, 1024), r = prng(14);
+  const grund = g.createLinearGradient(0, 0, 0, 1024); grund.addColorStop(0, "#80532f"); grund.addColorStop(1, "#5c3820");
+  g.fillStyle = grund; g.fillRect(0, 0, 512, 1024);
+  federn(g, r, { w: 512, h: 400, dichte: 34, dunkel: "#33190a", hell: "#a07048", alpha: .6 });
+  for (let k = 0; k < 9; k++){                                           // lange Schwungfedern mit hellen Bändern
+    const x0 = 10 + k * 58, top = 380 + (k % 2) * 20;
+    g.fillStyle = k % 2 ? "#6a4224" : "#5e391d"; g.globalAlpha = 1;
+    g.beginPath(); g.moveTo(x0, top); g.lineTo(x0 + 54, top); g.lineTo(x0 + 54, 990); g.quadraticCurveTo(x0 + 27, 1030, x0, 990); g.closePath(); g.fill();
+    g.globalAlpha = .6; g.strokeStyle = "#2a1408"; g.lineWidth = 3; g.beginPath(); g.moveTo(x0 + 27, top); g.lineTo(x0 + 27, 1000); g.stroke();
+    g.globalAlpha = .5; g.strokeStyle = "#e3c497"; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x0 + 52, top); g.lineTo(x0 + 52, 990); g.stroke();
+  }
+  federn(g, r, { y0: 300, w: 512, h: 120, dichte: 40, dunkel: "#2e170a", hell: "#b48456", alpha: .7 });
+  g.globalAlpha = 1; const t = alsTextur(c, false);
+  t.repeat.set(1 / 1.15, 1 / 1.9); t.offset.set(.55 / 1.15, 1); return t;
+}
+const PM = (o) => new THREE.MeshPhysicalMaterial({ roughness: .8, metalness: 0, ...o });
 const kugel = (r, ws = 64, hs = 48) => new THREE.SphereGeometry(r, ws, hs);
+// Eiförmiger Drehkörper: halbe Höhe a, Radius b, unten etwas breiter (bauch > 0)
+function ei(a, b, bauch = .08, seg = 96){
+  const pts = [];
+  for (let i = 0; i <= 48; i++){ const th = Math.PI * i / 48; pts.push(new THREE.Vector2(Math.max(b * Math.sin(th) * (1 + bauch * Math.cos(th)), 1e-4), -a * Math.cos(th))); }
+  return new THREE.LatheGeometry(pts, seg, Math.PI);
+}
+const clamp = (x, a = -1, b = 1) => Number.isFinite(x) ? Math.min(b, Math.max(a, x)) : 0;
 export function eule(){
-  const root = new THREE.Group(), body = new THREE.Group(), head = new THREE.Group(); root.add(body); body.add(head);
-  const fBraun = federTextur("#7a4628", "#4a2814", 7), fHell = federTextur("#ecd2a8", "#b98a5c", 8, 26), fFluegel = federTextur("#5e3720", "#331a0c", 9, 40);
-  fBraun.repeat.set(3, 2); fHell.repeat.set(2, 2); fFluegel.repeat.set(1, 2);
-  const braun = PM({ map: fBraun, bumpMap: fBraun, bumpScale: 1.4, sheen: .6, sheenColor: new THREE.Color(0xffd9b0), sheenRoughness: .6 });
-  const hell = PM({ map: fHell, bumpMap: fHell, bumpScale: 1.0, sheen: .5, sheenColor: new THREE.Color(0xffffff) });
-  const fluegel = PM({ map: fFluegel, bumpMap: fFluegel, bumpScale: 1.6, sheen: .5, sheenColor: new THREE.Color(0xffc89a) });
-  const gesicht = PM({ color: 0xf1dcbc, roughness: .9, sheen: .4, sheenColor: new THREE.Color(0xffffff) });
-  const iris = PM({ color: 0xf5a623, roughness: .15, clearcoat: 1, clearcoatRoughness: .05 });
-  const pupilleM = PM({ color: 0x111014, roughness: .1, clearcoat: 1 });
+  const root = new THREE.Group(), body = new THREE.Group(), hals = new THREE.Group(), head = new THREE.Group();
+  root.add(body); body.add(hals); hals.add(head);
+  hals.position.set(0, 2.2, .02); head.position.set(0, .58, 0); hals.rotation.order = "YXZ";
+  const fK = koerperTextur(), fKopf = kopfTextur(), fFl = fluegelTextur();
+  const feder = (map, extra = {}) => PM({ map, bumpMap: map, bumpScale: .9, sheen: .7, sheenRoughness: .55, sheenColor: new THREE.Color(0xffe2c0), ...extra });
+  const braun = feder(fKopf), koerper = feder(fK), schleier = feder(schleierTextur(), { bumpScale: .8, roughness: .9 });
+  const dunkel = feder(fKopf, { color: 0x8a6a55 });
+  const lidM = PM({ color: 0xc89f74, roughness: .85, sheen: .5, sheenColor: new THREE.Color(0xffffff) });
+  const augeM = PM({ map: augenTextur(), roughness: .12, clearcoat: 1, clearcoatRoughness: .04 });
   const glanz = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const schnabelM = PM({ color: 0xd9962f, roughness: .45, clearcoat: .6 });
-  const fussM = PM({ color: 0xe8a33d, roughness: .5 });
-  const hutM = PM({ color: 0x1f2b55, roughness: .55, clearcoat: .3 }), quaste = PM({ color: 0xf5c518, roughness: .5 });
-  // Rumpf und Bauch
-  body.add(mesh(kugel(1.25), braun, [0, 1.35, 0], [1, 1.1, .95]));
-  body.add(mesh(kugel(.88), hell, [0, 1.25, .68], [1, 1.08, .52]));
-  // Kopf
-  head.position.set(0, 2.45, .05);
-  head.add(mesh(kugel(1.05), braun, [0, 0, 0], [1.1, .95, .97]));
-  [-1, 1].forEach(sd => head.add(mesh(kugel(.52), gesicht, [sd * .37, 0, .74], [1, 1.02, .38])));
-  head.add(mesh(kugel(.3), braun, [0, .38, .8], [.55, .5, .3]));
-  // Augen mit Lidern
-  const lider = [], pupillen = [], brauen = [];
+  const schnabelM = PM({ color: 0xe8a22a, roughness: .35, clearcoat: .7, clearcoatRoughness: .2 });
+  const fussM = PM({ color: 0xf2b23f, roughness: .45, clearcoat: .3 }), krallenM = PM({ color: 0x5b4a3e, roughness: .3, clearcoat: .6 });
+  const hutM = PM({ color: 0x1f2b58, roughness: .6, sheen: .4, sheenColor: new THREE.Color(0x6f86d6) }), quaste = PM({ color: 0xe9b928, roughness: .45, sheen: .6, sheenColor: new THREE.Color(0xfff2a0) });
+  // Rumpf: ein Ei mit heller, gefleckter Brust in der Textur
+  body.add(mesh(ei(1.32, 1.3), koerper, [0, 1.42, 0], [1, 1, .93]));
+  // Kopf: groß und rund, sitzt ohne Hals auf dem Rumpf
+  head.add(mesh(ei(1.0, 1.16, -.04), braun, [0, 0, 0], [1, 1, .94]));
+  // Gesichtsschleier und Augen
+  const augen = [], lider = [], unterlider = [], brauen = [];
   [-1, 1].forEach(sd => {
-    const x = sd * .37;
-    head.add(mesh(kugel(.3, 48, 32), iris, [x, .02, .9], [1, 1, .55]));
-    pupillen.push(put(head, mesh(kugel(.15, 32, 24), pupilleM, [x, .02, 1.04], [1, 1, .4])));
-    head.add(mesh(kugel(.05, 16, 12), glanz, [x + .08, .1, 1.1]));
-    const lid = put(head, mesh(new THREE.SphereGeometry(.315, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), braun, [x, .02, .9], [1, 1, .6]));
-    lid.rotation.x = -1.75; lider.push(lid);
-    const br = put(head, mesh(kugel(.2, 24, 16), fluegel, [x * 1.05, .4, .86], [1.3, .28, .35])); br.rotation.z = -sd * .22; brauen.push(br);
+    const x = sd * .43;
+    const s = put(head, mesh(kugel(.54), schleier, [x, -.04, .74], [1, 1.08, .56])); s.rotation.y = sd * .22;
+    const a = put(head, mesh(kugel(.34, 64, 48), augeM, [x, .02, .92], [1, 1, .75])); a.userData.ry = sd * .08; augen.push(a);
+    head.add(mesh(kugel(.055, 16, 12), glanz, [x + .1, .1, 1.18]));
+    head.add(mesh(kugel(.028, 12, 8), glanz, [x - .07, -.1, 1.19]));
+    const lid = put(head, mesh(new THREE.SphereGeometry(.355, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), lidM, [x, .02, .92], [1, 1, .78])); lider.push(lid);
+    const unterlid = put(head, mesh(new THREE.SphereGeometry(.352, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), lidM, [x, .02, .92], [1, 1, .78])); unterlider.push(unterlid);
+    const br = put(head, mesh(new THREE.TorusGeometry(.26, .045, 12, 32, Math.PI * .7), dunkel, [x * 1.04, .3, .96], [1, 1, .6])); br.rotation.z = Math.PI * .15; br.userData.sd = sd; brauen.push(br);   // Bogen nach oben = freundlich
   });
-  // Schnabel
-  const oben = put(head, mesh(new THREE.ConeGeometry(.19, .46, 32), schnabelM, [0, -.2, 1.02])); oben.rotation.x = Math.PI * .58;
-  const unten = put(head, mesh(new THREE.ConeGeometry(.1, .16, 32), schnabelM, [0, -.3, .93])); unten.rotation.x = Math.PI * .56;
+  head.add(mesh(kugel(.28, 32, 24), braun, [0, .26, .92], [.42, .78, .42]));   // braune Federspitze zwischen den Augen
+  // Schnabel: kurz, nach unten gebogen
+  const oben = put(head, mesh(new THREE.ConeGeometry(.15, .4, 32), schnabelM, [0, -.3, 1.16])); oben.rotation.x = Math.PI * .66;
+  head.add(mesh(kugel(.14, 24, 16), schnabelM, [0, -.17, 1.1], [1, .8, .8]));
+  const unten = put(head, mesh(new THREE.ConeGeometry(.08, .12, 24), schnabelM, [0, -.36, 1.02])); unten.rotation.x = Math.PI * .6;
   // Federohren
-  [-1, 1].forEach(sd => { const o = put(head, mesh(new THREE.ConeGeometry(.2, .55, 32), fluegel, [sd * .68, .8, .05])); o.rotation.z = -sd * .4; });
-  // Flügel: eine durchgehende Flügelfläche, die an der Schulter am Körper ansetzt.
-  // Unterer Rand gezackt (Federspitzen), Muster: oben Deckfedern, unten gestreifte Schwungfedern.
-  const fluegelTextur = (() => {
-    // Leinwand oben = Flügelansatz (Schulter), unten = Federspitzen
-    const c = document.createElement("canvas"); c.width = 256; c.height = 512; const g = c.getContext("2d");
-    const grad = g.createLinearGradient(0, 0, 0, 512); grad.addColorStop(0, "#7a4728"); grad.addColorStop(1, "#5a331b");
-    g.fillStyle = grad; g.fillRect(0, 0, 256, 512);
-    for (let row = 0; row < 13; row++) for (let col = -1; col < 10; col++){      // Deckfedern (Schuppen) oben
-      const x = col * 28 + (row % 2) * 14, y = row * 15;
-      g.beginPath(); g.arc(x, y, 15, .2, Math.PI - .2); g.strokeStyle = "#3b2010"; g.globalAlpha = .4; g.lineWidth = 2.5; g.stroke();
-    }
-    for (let k = 0; k < 8; k++){                                                // lange Schwungfedern unten
-      const x0 = 16 + k * 32;
-      g.globalAlpha = .55; g.strokeStyle = "#2e180a"; g.lineWidth = 2.5;
-      g.beginPath(); g.moveTo(x0, 200); g.quadraticCurveTo(x0 + 6, 360, x0 + 2, 512); g.stroke();        // Federkiel
-      g.globalAlpha = .35; g.strokeStyle = "#e0bd92"; g.lineWidth = 2;
-      g.beginPath(); g.moveTo(x0 + 14, 210); g.quadraticCurveTo(x0 + 20, 360, x0 + 16, 512); g.stroke(); // Federkante
-      for (let b = 0; b < 4; b++){ g.globalAlpha = .18; g.fillStyle = "#24120a"; g.fillRect(x0 - 12, 250 + b * 60, 28, 16); }
-    }
-    g.globalAlpha = .9; g.fillStyle = "#d9b98f"; g.fillRect(0, 488, 256, 24);     // helle Spitzen
-    g.globalAlpha = 1;
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-    t.repeat.set(1 / 1.15, 1 / 1.9); t.offset.set(.55 / 1.15, 1); return t;
-  })();
-  const fluegelMat = PM({ map: fluegelTextur, bumpMap: fluegelTextur, bumpScale: 1.2, roughness: .75, sheen: .5, sheenColor: new THREE.Color(0xffcf9e), side: THREE.DoubleSide });
+  [-1, 1].forEach(sd => { const o = put(head, mesh(new THREE.ConeGeometry(.2, .5, 32), braun, [sd * .74, .78, -.02], [1, 1, .6])); o.rotation.z = -sd * .45; });
+  // Flügel: eine durchgehende, leicht gebogene Fläche mit gezacktem Federrand
+  const fluegelMat = PM({ map: fFl, bumpMap: fFl, bumpScale: .9, roughness: .75, sheen: .6, sheenColor: new THREE.Color(0xffd5a8), side: THREE.DoubleSide });
   const fluegelGeo = (() => {
     const sh = new THREE.Shape(), tip = [.28, -1.8], end = [-.5, -.55];
     sh.moveTo(0, 0);
-    sh.bezierCurveTo(.38, -.2, .52, -.95, tip[0], tip[1]);                         // Vorderkante
-    const n = 6, dx = end[0] - tip[0], dy = end[1] - tip[1], L = Math.hypot(dx, dy), ox = -dy / L, oy = dx / L;
-    for (let i = 1; i <= n; i++){                                                  // gezackter Federrand
+    sh.bezierCurveTo(.38, -.2, .52, -.95, tip[0], tip[1]);
+    const n = 7, dx = end[0] - tip[0], dy = end[1] - tip[1], L = Math.hypot(dx, dy), ox = -dy / L, oy = dx / L;
+    for (let i = 1; i <= n; i++){
       const ax = tip[0] + dx * (i - 1) / n, ay = tip[1] + dy * (i - 1) / n, bx = tip[0] + dx * i / n, by = tip[1] + dy * i / n;
-      sh.quadraticCurveTo((ax + bx) / 2 + ox * .2, (ay + by) / 2 + oy * .2, bx, by);
+      sh.quadraticCurveTo((ax + bx) / 2 + ox * .17, (ay + by) / 2 + oy * .17, bx, by);
     }
     sh.bezierCurveTo(-.55, -.35, -.3, -.04, 0, 0);
-    const geo = new THREE.ExtrudeGeometry(sh, { depth: .05, bevelEnabled: true, bevelThickness: .035, bevelSize: .035, bevelSegments: 3, curveSegments: 28 });
-    const pos = geo.attributes.position;                                           // leicht um den Körper biegen
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: .06, bevelEnabled: true, bevelThickness: .045, bevelSize: .04, bevelSegments: 4, curveSegments: 28 });
+    const pos = geo.attributes.position;
     for (let i = 0; i < pos.count; i++) pos.setZ(i, pos.getZ(i) - .32 * pos.getX(i) * pos.getX(i));
     geo.computeVertexNormals(); return geo;
   })();
   const fluegelGruppe = sd => {
-    const g = new THREE.Group(); g.position.set(sd * .96, 2.1, .25); body.add(g);
-    const m = new THREE.Mesh(fluegelGeo, fluegelMat); m.scale.x = sd; m.castShadow = true; g.add(m);
+    const g = new THREE.Group(); g.position.set(sd * 1.0, 2.15, .22); body.add(g);
+    const m = new THREE.Mesh(fluegelGeo, fluegelMat); m.scale.x = sd; g.add(m);
     return { g, m, sd };
   };
   const fl = fluegelGruppe(-1), fr = fluegelGruppe(1);
-  const fluegelPose = (w, t, raise, spread, schwing) => {
+  const fluegelPose = (w, raise, spread, schwing) => {
     const offen = Math.min(1, raise / 1.2);
     w.g.rotation.z = w.sd * (.04 + raise + schwing);
     w.g.rotation.y = -w.sd * (.72 - .55 * offen);
     w.g.rotation.x = -.05 - offen * .1;
     w.m.scale.set(w.sd * (1 + .22 * spread), 1 + .08 * spread, 1);
   };
-  // Füße
-  [-.42, .42].forEach(x => [-.12, 0, .12].forEach(d => { const z = mesh(new THREE.CapsuleGeometry(.065, .16, 8, 16), fussM, [x + d, .07, .62]); z.rotation.x = Math.PI / 2; z.rotation.y = d * 2; root.add(z); }));
-  // Doktorhut
-  const hut = new THREE.Group(); hut.position.set(0, .95, -.05); hut.rotation.z = -.1; head.add(hut);
-  hut.add(mesh(new THREE.CylinderGeometry(.48, .55, .32, 48), hutM));
-  put(hut, mesh(new THREE.BoxGeometry(1.4, .07, 1.4), hutM, [0, .19, 0])).rotation.y = Math.PI / 4;
-  hut.add(mesh(kugel(.06, 16, 12), quaste, [0, .24, 0]));
-  const q = put(hut, mesh(new THREE.CylinderGeometry(.025, .025, .55, 12), quaste, [.6, -.06, .2]));
-  hut.add(mesh(new THREE.ConeGeometry(.07, .18, 16), quaste, [.6, -.38, .2]));
+  // Füße: drei kräftige Zehen mit dunklen Krallen
+  [-.45, .45].forEach(x => [-.14, 0, .14].forEach(d => {
+    const zeh = new THREE.Group(); zeh.position.set(x + d * .9, .09, .66); zeh.rotation.y = d * 1.6; root.add(zeh);
+    const z = mesh(new THREE.CapsuleGeometry(.08, .18, 8, 16), fussM, [0, 0, .08]); z.rotation.x = Math.PI / 2; zeh.add(z);
+    const k = mesh(new THREE.ConeGeometry(.04, .1, 12), krallenM, [0, -.03, .24]); k.rotation.x = Math.PI * .62; zeh.add(k);
+  }));
+  // Doktorhut mit Quaste
+  const hut = new THREE.Group(); hut.position.set(0, .93, -.05); hut.rotation.z = -.08; head.add(hut);
+  hut.add(mesh(new THREE.CylinderGeometry(.5, .56, .34, 48), hutM));
+  put(hut, mesh(new THREE.BoxGeometry(1.45, .08, 1.45), hutM, [0, .2, 0])).rotation.y = Math.PI / 4;
+  hut.add(mesh(kugel(.07, 16, 12), quaste, [0, .26, 0]));
+  const q = new THREE.Group(); q.position.set(.64, .22, .24); hut.add(q);
+  q.add(mesh(new THREE.CylinderGeometry(.022, .022, .5, 12), quaste, [0, -.25, 0]));
+  q.add(mesh(kugel(.05, 12, 8), quaste, [0, -.5, 0]));
+  for (let i = 0; i < 9; i++){ const a = i / 9 * Math.PI * 2; q.add(mesh(new THREE.CylinderGeometry(.012, .008, .26, 6), quaste, [Math.cos(a) * .035, -.66, Math.sin(a) * .035])); }
   root.traverse(o => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+  // Lid-Winkel: -1.75 = ganz offen, 1.45 = zu; Ruhe wach. Unterlid drückt von unten hoch = freundliche, lächelnde Augen
+  const LID_OFFEN = -1.75, LID_ZU = 1.45, LID_RUHE = -1.3, UNTERLID_RUHE = .8, UNTERLID_OFFEN = 1.4;
   return { root, update(t, s = {}){
-    root.scale.setScalar(Math.max(backOut(s.intro ?? 1), .001));
+    root.scale.setScalar(Math.max(backOut(s.intro ?? 1) || 0, .001));
     body.position.y = Math.sin(t * 1.9) * .035 + (s.hop ?? 0) * Math.abs(Math.sin(t * 6)) * .3;
     body.scale.set(1 + Math.sin(t * 1.9) * .008, 1 - Math.sin(t * 1.9) * .008, 1);
-    head.rotation.y = (s.look ?? 0) * .4 + Math.sin(t * .8) * .08; head.rotation.z = Math.sin(t * 1.3) * .05;
-    const zu = ((t + .4) % 3.6) < .16 ? 1 : 0;
-    lider.forEach(l => l.rotation.x = zu ? 1.45 : -1.75);
+    body.rotation.z = clamp(s.lehnen ?? 0) * .12;
+    // Kopf frei (look = alter Parameter, schwächer, damit alte Drehbücher gleich aussehen): kopf = drehen, nicken = hoch/runter, neigen = schräg (jeweils -1 … 1)
+    const dreh = clamp((s.kopf ?? 0) + (s.look ?? 0) * .45), nick = clamp(s.nicken ?? 0), neig = clamp(s.neigen ?? 0);
+    hals.rotation.y = dreh * .9 + Math.sin(t * .8) * .06;
+    hals.rotation.x = -nick * .32 + (s.talk ?? 0) * Math.sin(t * 3.1) * .03;
+    hals.rotation.z = neig * .35 + Math.sin(t * 1.3) * .04;
+    // Blick: Augäpfel drehen sich, Standard folgt etwas der Kopfdrehung
+    const [bx, by] = Array.isArray(s.blick) ? s.blick : [dreh * .4, 0];
+    augen.forEach(a => { a.rotation.y = a.userData.ry + clamp(bx) * .38; a.rotation.x = -clamp(by) * .3; });
+    const staunen = clamp(s.staunen ?? 0, 0, 1), zu = ((t + .4) % 3.6) < .16;
+    const lid = zu ? LID_ZU : LID_RUHE + (LID_OFFEN - LID_RUHE) * staunen - clamp(by, -1, 0) * .3;
+    lider.forEach(l => l.rotation.x = lid);
+    unterlider.forEach(l => l.rotation.x = UNTERLID_RUHE + (UNTERLID_OFFEN - UNTERLID_RUHE) * staunen);
     const talk = (s.talk ?? 0) * mouthOpen(t);
-    unten.rotation.x = Math.PI * (.56 + talk * .08); unten.position.y = -.3 - talk * .1;
-    brauen.forEach(b => b.position.y = .4 + (s.talk ?? 0) * .05 * Math.abs(Math.sin(t * 2.4)));
+    unten.rotation.x = Math.PI * (.6 + talk * .08); unten.position.y = -.33 - talk * .08;
+    brauen.forEach(b => { b.position.y = .3 + staunen * .08 + (s.talk ?? 0) * .04 * Math.abs(Math.sin(t * 2.4)); });
     const w = s.wave ?? 0, pt = s.point ?? 0, rede = (s.talk ?? 0) * Math.abs(Math.sin(t * 2.2));
-    fluegelPose(fr, t, w * 1.9 + pt * 1.35, Math.max(w, pt), w * Math.sin(t * 8) * .35 + pt * Math.sin(t * 2) * .05);
-    fluegelPose(fl, t, rede * .25 + (s.pointL ?? 0) * 1.35, rede * .4 + (s.pointL ?? 0), 0);
-    q.rotation.z = Math.sin(t * 2.6) * .25;
+    fluegelPose(fr, w * 1.9 + pt * 1.35, Math.max(w, pt), w * Math.sin(t * 8) * .35 + pt * Math.sin(t * 2) * .05);
+    fluegelPose(fl, rede * .25 + (s.pointL ?? 0) * 1.35, rede * .4 + (s.pointL ?? 0), 0);
+    q.rotation.z = Math.sin(t * 2.6) * .2 - hals.rotation.z * .6; q.rotation.x = Math.sin(t * 1.7) * .1;
   }};
 }
 
 // ---------- Bühne ----------
+// Weiches Studio-Umgebungslicht (helle Flächen in einem grauen Raum) für runde Glanzlichter
+function studioLicht(renderer){
+  const raum = new THREE.Scene(), box = new THREE.BoxGeometry(1, 1, 1);
+  raum.add(mesh(box, new THREE.MeshBasicMaterial({ color: 0x8a8f9c, side: THREE.BackSide }), [0, 0, 0], [20, 12, 20]));
+  const flaeche = (farbe, [x, y, z], [sx, sy, sz]) => raum.add(mesh(box, new THREE.MeshBasicMaterial({ color: farbe }), [x, y, z], [sx, sy, sz]));
+  flaeche(0xffffff, [0, 5.8, 0], [8, .1, 8]);
+  flaeche(0xfff1dc, [-9.8, 2, 2], [.1, 5, 6]);
+  flaeche(0xdfe8ff, [9.8, 1, -2], [.1, 4, 5]);
+  flaeche(0xffffff, [0, 1.5, 9.8], [7, 4, .1]);
+  const pm = new THREE.PMREMGenerator(renderer), tex = pm.fromScene(raum, .04).texture; pm.dispose();
+  box.dispose(); raum.traverse(o => o.material?.dispose()); return tex;
+}
 export function buehne(canvas, W = 1920, H = 1080, opt = {}){
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(W, H, false); renderer.setPixelRatio(1);
@@ -297,6 +391,7 @@ export function buehne(canvas, W = 1920, H = 1080, opt = {}){
     const boden = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: .18 }));
     boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true; scene.add(boden);
     const warm = new THREE.DirectionalLight(0xffb070, 1.2); warm.position.set(3, 4, -6); scene.add(warm);
+    scene.environment = studioLicht(renderer); scene.environmentIntensity = .35;
   }
   const fill = new THREE.DirectionalLight(0xffffff, .9); fill.position.set(0, 2, 10); scene.add(fill);
   const rim = new THREE.DirectionalLight(0xbfd4ff, .9); rim.position.set(5, 3, -4); scene.add(rim);

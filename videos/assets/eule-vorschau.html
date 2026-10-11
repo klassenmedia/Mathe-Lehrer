@@ -1,11 +1,18 @@
 <!doctype html><html><body style="margin:0;background:#f6f8fc">
-<canvas id="c" style="width:1920px;height:1080px;display:block"></canvas>
+<canvas id="c" style="width:100vw;max-width:1920px;aspect-ratio:16/9;display:block"></canvas>
 <script type="module">
 import { eule, buehne } from "./figuren.js";
+// #rest:1 #point:1 #wave:1 – Standbild; #live – Kopf dreht, nickt, neigt sich, Augen blicken umher
 const B = buehne(document.getElementById("c"), 1920, 1080, { weich: true });
 const [mode, t] = (location.hash.slice(1) || "rest:1").split(":");
 const a = eule(); B.scene.add(a.root);
 B.camera.position.set(0, 2.6, 11.5); B.camera.lookAt(0, 1.9, 0);
-a.update(+t, mode === "rest" ? {} : mode === "point" ? { point: 1 } : { wave: 1 });
-B.render(); document.title = "ok";
+const pose = { rest: {}, point: { point: 1 }, wave: { wave: 1 }, links: { kopf: -.8, blick: [-1, 0] }, hoch: { nicken: .8, staunen: 1 }, schraeg: { neigen: .9, blick: [0, -.3] } };
+if (mode === "live"){
+  const loop = ms => { const s = ms / 1000;
+    a.update(s, { kopf: Math.sin(s * .7) * .8, nicken: Math.sin(s * 1.1) * .5, neigen: Math.sin(s * .5) * .6, blick: [Math.sin(s * 1.6), Math.cos(s * 1.2) * .5], staunen: (Math.sin(s * .4) + 1) / 2, wave: s % 8 > 5 ? 1 : 0 });
+    B.render(); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+} else { a.update(Number.isFinite(+t) ? +t : 1, Object.hasOwn(pose, mode) ? pose[mode] : {}); B.render(); }
+document.title = "ok";
 </script></body></html>
