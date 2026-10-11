@@ -9,12 +9,19 @@ Mathe-Lernspiel für die 3. Klasse. Eine einzige Datei: `index.html` im Browser 
 - **Punkt vor Strich** – Punktaufgaben markieren, zuerst rechnen, dann Strichaufgabe.
 - **Fachwörter** – Faktor, Produkt, Dividend, Divisor, Quotient.
 
+### Profi-Tricks für große Zahlen
+- **Zahlen bis 1000** – Hunderterplatten, Zehnerstangen, Einerwürfel in der Stellentafel; die Null als Platzhalter; Übergänge (395 + 10).
+- **Plus & Minus groß** – Überschlag, stellenweise rechnen, fast runde Zahlen (463 − 198 = 463 − 200 + 2).
+- **Kleine Aufgabe hilft** – 3 · 40 → 3 · 4, 120 : 4 → 12 : 4, Nullen anhängen.
+- **Große Malaufgaben** – 7 · 16 = 7 · 10 + 7 · 6 mit Rechteck und Malkreuz.
+- **Rechentricks & Muster** – Tauschaufgabe, Zahlenhaus (Umkehraufgaben), Nachbaraufgaben, Halbieren und Verdoppeln.
+
 Jede Runde hat 10 Aufgaben. „Zeig mir den Weg“ erklärt jede Aufgabe Schritt für Schritt mit Bildern. Typische Fehler (z. B. Rest zu groß, Punkt-vor-Strich ignoriert) bekommen eine gezielte Rückmeldung.
 
 ## Erklärvideos
-In `videos/` liegen fünf Erklärvideos mit Sprecherstimme und Untertiteln (eins pro Station). Im Spiel öffnet der Knopf „▶ Erklärvideo“ das passende Video.
+In `videos/` liegen zehn Erklärvideos mit Sprecherstimme und Untertiteln (eins pro Station). Im Spiel öffnet der Knopf „▶ Erklärvideo“ das passende Video.
 
-Neu erzeugen (Drehbücher stehen in `videos/skripte.py`):
+Neu erzeugen (Drehbücher stehen in `videos/skripte.py` und `videos/skripte_profi.py`):
 ```bash
 pip install piper-tts
 export HYPERFRAMES_BROWSER_PATH=/pfad/zu/chrome   # optional, sonst lädt HyperFrames Chrome selbst

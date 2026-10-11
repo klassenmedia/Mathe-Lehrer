@@ -168,6 +168,49 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--blue); outline-
 .redo{display:flex; flex-wrap:wrap; gap:8px; justify-content:center}
 .redo span{background:var(--bad-bg); color:var(--bad); border-radius:10px; padding:2px 10px; font-weight:700}
 
+
+/* Profi-Stationen */
+.grouphead{font-size:24px; margin:22px 0 10px}
+.grouphead:first-of-type{margin-top:4px}
+.hz{display:flex; flex-wrap:wrap; gap:14px; justify-content:center; align-items:flex-end; margin-top:12px}
+.grp{display:flex; flex-wrap:wrap; gap:4px; align-items:flex-end; justify-content:center; max-width:100%}
+.hp{display:block; width:54px; height:54px; border-radius:4px; background:var(--blue);
+  background-image:linear-gradient(var(--card) 1px,transparent 1px),linear-gradient(90deg,var(--card) 1px,transparent 1px); background-size:5.4px 5.4px}
+.zb{display:block; width:9px; height:54px; border-radius:2px; background:var(--blue); background-image:linear-gradient(var(--card) 1px,transparent 1px); background-size:100% 5.4px}
+.ec{display:block; width:9px; height:9px; border-radius:2px; background:var(--orange)}
+.tafel{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); width:min(100%,460px); border:2px solid var(--line); border-radius:12px; overflow:hidden; background:var(--card)}
+.tafel .th{font-family:var(--display); font-weight:800; text-align:center; border-bottom:2px solid var(--line); color:var(--blue)}
+.tafel .tc{min-height:84px; padding:8px; display:flex; align-items:center; justify-content:center}
+.tafel .tc.mark{background:var(--marker)}
+.tafel .tc .grp{width:100%}
+.tafel .hp{width:40px; height:40px; background-size:4px 4px}
+.tafel .zb{height:40px; background-size:100% 4px}
+.tafel .td{font-family:var(--display); font-weight:800; font-size:30px; text-align:center; border-top:2px solid var(--line)}
+.tafel .td.r{color:var(--bad)}
+.tafel > div:nth-child(3n+1), .tafel > div:nth-child(3n+2){border-right:2px solid var(--line)}
+.jumps{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px}
+.jc{font-family:var(--display); font-weight:800; font-size:24px; border:2px solid var(--line); background:var(--paper); border-radius:10px; padding:2px 12px}
+.ja{display:flex; flex-direction:column; align-items:center; font-weight:700; color:var(--ink-soft); line-height:1}
+.ja small{font-size:14px} .ja.r small{color:var(--bad)} .ja.g small{color:var(--good)}
+.kreuz{display:grid; grid-template-columns:repeat(3,72px); text-align:center; font-family:var(--display); font-weight:800; font-size:24px; line-height:48px}
+.kreuz > div{border:2px solid var(--line); margin:-1px; background:var(--card)}
+.kreuz .hd{background:var(--blue-bg)}
+.area{display:flex; width:420px; max-width:100%; height:110px; border-radius:8px; overflow:hidden}
+.area > div{display:grid; place-items:center; font-weight:700; color:var(--card)}
+.area .ab{background:var(--blue)} .area .ao{background:var(--orange)}
+.arealab{font-size:14px; color:var(--ink-soft)}
+.colsteps{display:flex; flex-direction:column; gap:4px; font-family:var(--display); font-weight:800; font-size:24px; font-variant-numeric:tabular-nums}
+.house{display:flex; flex-direction:column; align-items:center; font-family:var(--display); font-weight:800}
+.house .roof{width:240px; height:70px; background:var(--orange); clip-path:polygon(50% 0,100% 100%,0 100%); display:flex; align-items:flex-end; justify-content:center; color:var(--card); font-size:26px; padding-bottom:4px}
+.house .floor, .house .rooms{display:grid; grid-template-columns:1fr 1fr; width:200px}
+.house .floor div, .house .rooms div{border:2px solid var(--line); margin:-1px; text-align:center; background:var(--card); font-size:24px; line-height:44px}
+.house .rooms div{font-size:16px; line-height:36px}
+.halves{display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:center}
+.halves .hb, .halves .ho{width:90px; height:22px} .halves .hb{background:var(--blue)} .halves .ho{background:var(--orange)}
+.halves .side{display:flex}
+.halves span{font-size:28px; color:var(--ink-soft); margin-inline:8px}
+.field .d.x{opacity:.3}
+
 @media (max-width:520px){
   body{font-size:17px}
   .slot{min-width:84px; height:58px; font-size:30px}
@@ -215,7 +258,7 @@ $("#starCount").textContent = stars;
 /* ---------- Bausteine für Bilder ---------- */
 // Punktefeld: rows Reihen mit je cols Punkten. rowClass(r) -> "", "o", "x"; cross(r) -> durchgestrichen
 function dotField(rows, cols, {rowClass=()=> "", colClass=null, cross=()=>false, label=null}={}){
-  const dot = Math.max(12, Math.min(22, Math.floor(260/cols)));
+  const dot = Math.max(8, Math.min(22, Math.floor(260/cols)));
   const f = h("div",{class:"field", style:`--dot:${dot}px`});
   for (let r=0; r<rows; r++){
     const row = h("div",{class:"fr" + (r===5 ? " gap":"") + (cross(r) ? " cross":"")});
@@ -525,6 +568,258 @@ function bTask(text, ans, op, nums, unknown){
 }
 STATIONS.begriffe.example = bTask(`Ein <b>Faktor</b> ist 6, das <b>Produkt</b> ist 36. Der andere <b>Faktor</b> ist …`, 6, "mal", [6,6,36], 0);
 
+/* ===================== Profi-Tricks für große Zahlen ===================== */
+function blocksHTML(H, Z, E){
+  const g = (n, cls) => `<div class="grp">${Array.from({length:n}, () => `<i class="${cls}"></i>`).join("")}</div>`;
+  return `<div class="hz">${H ? g(H,"hp") : ""}${Z ? g(Z,"zb") : ""}${E ? g(E,"ec") : ""}</div>`;
+}
+function tafel(H, Z, E, {mark=-1, digits=true}={}){
+  const cells = [[H,"hp","H"],[Z,"zb","Z"],[E,"ec","E"]];
+  return h("div",{class:"tafel", html:
+    cells.map(([n,cls,l]) => `<div class="th">${l}</div>`).join("") +
+    cells.map(([n,cls],i) => `<div class="tc${i===mark?" mark":""}"><div class="grp">${Array.from({length:n},()=>`<i class="${cls}"></i>`).join("")}</div></div>`).join("") +
+    (digits ? cells.map(([n],i) => `<div class="td${i===mark?" r":""}">${n}</div>`).join("") : "")});
+}
+function jumpsEl(start, steps){
+  const w = h("div",{class:"jumps"}, h("span",{class:"jc"}, String(start)));
+  steps.forEach(([lab, val, cls]) => w.append(h("span",{class:"ja " + cls}, h("small",{}, lab), "→"), h("span",{class:"jc"}, String(val))));
+  return w;
+}
+function kreuzEl(a, T, E, filled){
+  return h("div",{class:"kreuz", html:
+    `<div class="hd">·</div><div class="hd">${T}</div><div class="hd">${E}</div><div class="hd">${a}</div>` +
+    `<div class="b">${filled ? a*T : "?"}</div><div class="o">${filled ? a*E : "?"}</div>`});
+}
+function areaEl(a, T, E){
+  const w = h("div",{class:"area"});
+  w.append(h("div",{class:"ab", style:`flex:${T}`}, `${a} · ${T}`), h("div",{class:"ao", style:`flex:${E}; min-width:64px`}, `${a} · ${E}`));
+  return h("div",{class:"visual"}, h("div",{class:"arealab"}, `${a} Reihen, ${T + E} Spalten`), w);
+}
+
+STATIONS.stellen = {
+  group:"profi", sym:"HZE", name:"Zahlen bis 1000", desc:"Hunderter, Zehner, Einer. Und warum die Null so wichtig ist.",
+  video:"videos/6-zahlen-bis-1000.mp4",
+  make(){
+    const H = rnd(1,9), Z = Math.random() < .25 ? 0 : rnd(0,9), E = rnd(0,9), n = H*100 + Z*10 + E;
+    const type = pick(["count","split","plus"]);
+    if (type === "count")
+      return { kind:"stellen-count", H, Z, E, n, small:true, plain:`Welche Zahl? ${H}H ${Z}Z ${E}E`,
+        q:`Welche Zahl ist das?${blocksHTML(H,Z,E)}`, slots:[{label:"Zahl", ans:n}] };
+    if (type === "split")
+      return { kind:"stellen-split", H, Z, E, n, q:`${n} = ☐ H + ☐ Z + ☐ E`, small:true,
+        slots:[{label:"Hunderter", ans:H},{label:"Zehner", ans:Z},{label:"Einer", ans:E}] };
+    const step = pick([1,10,10,100]), sign = n + step <= 999 && Math.random() < .6 ? 1 : -1;
+    let m = n;
+    if (step === 10 && sign > 0 && Math.random() < .5) m = Math.min(H,8)*100 + 90 + E;   // Zehnerübergang üben
+    if (step === 1 && sign > 0 && Math.random() < .5) m = H*100 + Math.min(Z,8)*10 + 9;
+    if (m + sign*step < 1 || (sign < 0 && step === 1 && m % 100 === 0)) return this.make();
+    return { kind:"stellen-plus", n:m, step, sign, q:`${m} ${sign>0?"+":"−"} ${step} = ?`, slots:[{label:"Ergebnis", ans:m + sign*step}] };
+  },
+  hint(t, vals){
+    if (t.kind === "stellen-count" && vals[0] === t.H*100 + t.E*10 + t.Z) return "Achtung, Reihenfolge: erst Hunderter, dann Zehner, dann Einer.";
+    if (t.kind === "stellen-count" && t.Z === 0 && vals[0] === t.H*10 + t.E) return "Es gibt keine Zehner. Dafür musst du eine <b>0</b> hinschreiben!";
+    return null;
+  },
+  steps(t){
+    if (t.kind === "stellen-plus"){
+      const r = t.n + t.sign*t.step, d = x => [Math.floor(x/100), Math.floor(x/10)%10, x%10];
+      const [a1,a2,a3] = d(t.n), [b1,b2,b3] = d(r), col = t.step === 100 ? 0 : t.step === 10 ? 1 : 2;
+      const names = ["Hunderter","Zehner","Einer"];
+      const st = [
+        { text:`So sieht <b>${t.n}</b> aus: ${a1} Hunderter, ${a2} Zehner, ${a3} Einer.`, vis:() => tafel(a1,a2,a3) },
+        { text:`${t.sign>0?"+":"−"} ${t.step} heißt: ${t.sign>0?"ein":"einen"} <b>${names[col]}</b> ${t.sign>0?"mehr":"weniger"}.`, vis:() => tafel(a1,a2,a3,{mark:col}) },
+      ];
+      if ((t.sign>0 && [a1,a2,a3][col] === 9) || (t.sign<0 && [a1,a2,a3][col] === 0))
+        st.push({ text: t.sign>0 ? `Jetzt wären es 10 ${names[col]}. <b>10 ${names[col]} tauschen wir in 1 ${names[col-1]}</b>!`
+                                 : `Es gibt keine ${names[col]}. Wir <b>tauschen 1 ${names[col-1]} in 10 ${names[col]}</b> und nehmen dann einen weg.`,
+                  vis:() => ruleBox("10 Einer = 1 Zehner · 10 Zehner = 1 Hunderter") });
+      st.push({ text:`Jetzt sind es ${b1} Hunderter, ${b2} Zehner, ${b3} Einer: <span class="mk">${r}</span>`, vis:() => tafel(b1,b2,b3) });
+      return st;
+    }
+    const {H, Z, E, n} = t;
+    const st = [
+      { text:`Jede Stelle hat ihren Platz: <b>H</b>underter, <b>Z</b>ehner, <b>E</b>iner.<br>Eine Platte ist 100, eine Stange ist 10, ein Würfel ist 1.`, vis:() => tafel(H,Z,E,{digits:false}) },
+      { text:`Wir zählen: <b>${H}</b> Hunderter, <b>${Z}</b> Zehner, <b>${E}</b> Einer.`, vis:() => tafel(H,Z,E) },
+    ];
+    if (Z === 0) st.push({ text:`Keine Zehner? Dann schreiben wir eine <b>0</b>. Sie hält den Platz frei. Ohne sie stünde da ${H}${E}, und das ist viel weniger!`, vis:() => tafel(H,Z,E,{mark:1}) });
+    st.push({ text:`${H*100} + ${Z*10} + ${E} = <span class="mk">${n}</span>`, vis:() => ruleBox("10 Einer = 1 Zehner · 10 Zehner = 1 Hunderter") });
+    return st;
+  },
+};
+STATIONS.stellen.example = { kind:"stellen-count", H:6, Z:0, E:8, n:608, small:true, plain:"Welche Zahl? 6H 0Z 8E",
+  q:`Welche Zahl ist das?${blocksHTML(6,0,8)}`, slots:[{label:"Zahl", ans:608}] };
+
+STATIONS.gross = {
+  group:"profi", sym:"+−", name:"Plus & Minus groß", desc:"Erst schätzen, dann Stelle für Stelle. Und der Trick mit fast runden Zahlen.",
+  video:"videos/7-plus-minus-gross.mp4",
+  make(){
+    if (Math.random() < .55){
+      const a = rnd(101, 699), b = rnd(101, Math.min(899, 999 - a));
+      const d = x => [Math.floor(x/100)*100, Math.floor(x/10)%10*10, x%10];
+      const [a1,a2,a3] = d(a), [b1,b2,b3] = d(b);
+      return { kind:"plus", a, b, q:`${a} + ${b} = ?`, parts:[[a1,b1],[a2,b2],[a3,b3]],
+        slots:[{label:`${a1} + ${b1} =`, ans:a1+b1},{label:`${a2} + ${b2} =`, ans:a2+b2},{label:`${a3} + ${b3} =`, ans:a3+b3},{label:"Ergebnis", ans:a+b}] };
+    }
+    const R = rnd(1,6)*100, k = rnd(1,3), b = R - k, a = rnd(R + 20, 999), op = Math.random() < .7 ? "−" : "+";
+    if (op === "+" && a + b > 999) return this.make();
+    const first = op === "−" ? a - R : a + R, res = op === "−" ? a - b : a + b;
+    return { kind:"fast", a, b, R, k, op, q:`${a} ${op} ${b} = ?`,
+      slots:[{label:`${a} ${op} ${R} =`, ans:first},{label:"Ergebnis", ans:res}] };
+  },
+  hint(t, vals){
+    if (t.kind === "fast" && t.op === "−" && vals[1] === t.a - t.R - t.k) return `Du hast ${t.k} zu viel weggenommen. Die musst du wieder <b>dazuzählen</b>, nicht nochmal abziehen.`;
+    if (t.kind === "fast" && t.op === "+" && vals[1] === t.a + t.R + t.k) return `Du hast ${t.k} zu viel dazugezählt. Die musst du wieder <b>abziehen</b>.`;
+    if (t.kind === "plus"){
+      const last = vals[3], ub = Math.round(t.a/100)*100 + Math.round(t.b/100)*100;
+      if (Math.abs(last - (t.a+t.b)) > 150) return `Überschlag: ungefähr ${Math.round(t.a/100)*100} + ${Math.round(t.b/100)*100} = ${ub}. Dein Ergebnis ist zu weit weg.`;
+    }
+    return null;
+  },
+  steps(t){
+    if (t.kind === "plus"){
+      const [[a1,b1],[a2,b2],[a3,b3]] = t.parts, ra = Math.round(t.a/100)*100, rb = Math.round(t.b/100)*100;
+      return [
+        { text:`<b>Erst schätzen (Überschlag):</b> ${t.a} ist ungefähr ${ra}, ${t.b} ist ungefähr ${rb}.<br>Das Ergebnis ist also ungefähr <b>${ra+rb}</b>.`, vis:() => null },
+        { text:`Jetzt genau, <b>Stelle für Stelle</b>:`, vis:() => h("div",{class:"colsteps", html:
+            `<div><span class="b">H:</span> ${a1} + ${b1} = ${a1+b1}</div><div><span class="b">Z:</span> ${a2} + ${b2} = ${a2+b2}</div><div><span class="o">E:</span> ${a3} + ${b3} = ${a3+b3}</div>`}) },
+        { text:`Alles zusammen: ${a1+b1} + ${a2+b2} + ${a3+b3} = <span class="mk">${t.a+t.b}</span>` +
+            (a3+b3 >= 10 || a2+b2 >= 100 ? `<br>Hier entsteht ein neuer ${a3+b3 >= 10 ? "Zehner" : "Hunderter"}. Den zählen wir einfach mit.` : ""), vis:() => null },
+        { text:`<b>Vergleich mit dem Überschlag:</b> ${t.a+t.b} liegt nah bei ${ra+rb}. Das passt!`, vis:() => ruleBox("Erst schätzen, dann rechnen, dann vergleichen.") },
+      ];
+    }
+    const {a, b, R, k, op} = t, first = op === "−" ? a - R : a + R, res = op === "−" ? a - b : a + b, back = op === "−" ? "+" : "−";
+    return [
+      { text:`<b>${b}</b> ist fast <b>${R}</b>. Mit ${R} rechnet es sich viel leichter.`, vis:() => null },
+      { text:`Erst ${op} ${R}: ${a} ${op} ${R} = <b>${first}</b>`, vis:() => jumpsEl(a, [[`${op} ${R}`, first, op === "−" ? "r" : "g"]]) },
+      { text:`Aber das war ${k} zu viel. Darum rechnen wir ${back} ${k}: ${first} ${back} ${k} = <span class="mk">${res}</span>`,
+        vis:() => jumpsEl(a, [[`${op} ${R}`, first, op === "−" ? "r" : "g"],[`${back} ${k}`, res, op === "−" ? "g" : "r"]]) },
+    ];
+  },
+};
+STATIONS.gross.example = { kind:"fast", a:463, b:198, R:200, k:2, op:"−", q:"463 − 198 = ?", slots:[{label:"463 − 200 =", ans:263},{label:"Ergebnis", ans:265}] };
+
+STATIONS.zehner = {
+  group:"profi", sym:"·0", name:"Kleine Aufgabe hilft", desc:"3 · 40, 3 · 200, 120 : 4. Nullen weg, rechnen, Nullen dran.",
+  video:"videos/8-kleine-aufgabe-hilft.mp4",
+  make(){
+    const a = rnd(2,9), z = rnd(2,9), type = pick(["mal10","mal10","mal100","durch10"]);
+    if (type === "mal100" && a*z > 9) return this.make();
+    if (type === "mal10") return { kind:type, a, z, q:`${a} · ${z*10} = ?`, slots:[{label:`${a} · ${z} =`, ans:a*z},{label:"Ergebnis", ans:a*z*10}] };
+    if (type === "mal100") return { kind:type, a, z, q:`${a} · ${z*100} = ?`, slots:[{label:`${a} · ${z} =`, ans:a*z},{label:"Ergebnis", ans:a*z*100}] };
+    return { kind:type, a, z, q:`${a*z*10} : ${a} = ?`, slots:[{label:`${a*z} : ${a} =`, ans:z},{label:"Ergebnis", ans:z*10}] };
+  },
+  hint(t, vals){
+    const [small, res] = vals, ok = t.slots[1].ans;
+    if (res === t.slots[0].ans) return "Das ist die kleine Aufgabe. Jetzt noch die <b>Null wieder anhängen</b>!";
+    if (res === ok*10) return "Eine Null zu viel! Zähle die Nullen genau.";
+    if (res*10 === ok) return "Da fehlt eine Null.";
+    return null;
+  },
+  steps(t){
+    const {a, z} = t;
+    if (t.kind === "durch10") return [
+      { text:`<b>${a*z*10}</b>, das sind <b>${a*z} Zehner</b>.`, vis:() => h("div",{class:"hz", html:`<div class="grp">${'<i class="zb"></i>'.repeat(a*z)}</div>`}) },
+      { text:`${a*z} Zehner verteilen wir auf ${a} Gruppen: Jede bekommt <b>${z} Zehner</b>.`,
+        vis:() => h("div",{class:"hz", html:Array.from({length:a}, () => `<div class="grp">${'<i class="zb"></i>'.repeat(z)}</div>`).join("")}) },
+      { text:`Kleine Aufgabe: ${a*z} : ${a} = ${z}. Dann die Null dran: <span class="mk">${a*z*10} : ${a} = ${z*10}</span>`, vis:() => ruleBox("Null weg → klein rechnen → Null dran") },
+    ];
+    const big = t.kind === "mal100", f = big ? 100 : 10, nul = big ? "zwei Nullen" : "eine Null";
+    return [
+      { text:`<b>${z*f}</b>, das sind ${z} ${big ? "Hunderter" : "Zehner"}. Also rechnen wir ${a}-mal ${z} ${big ? "Hunderter" : "Zehner"}.`,
+        vis:() => h("div",{class:"hz", html:Array.from({length:a}, () => `<div class="grp">${(big ? '<i class="hp"></i>' : '<i class="zb"></i>').repeat(z)}</div>`).join("")}) },
+      { text:`Die <b>kleine Aufgabe</b>: ${a} · ${z} = <b>${a*z}</b>.`, vis:() => null },
+      { text:`${z*f} hat ${nul}. Die hängen wir an: <span class="mk">${a} · ${z*f} = ${a*z*f}</span>`, vis:() => ruleBox("Null weg → klein rechnen → Null dran") },
+    ];
+  },
+};
+STATIONS.zehner.example = { kind:"mal10", a:3, z:4, q:"3 · 40 = ?", slots:[{label:"3 · 4 =", ans:12},{label:"Ergebnis", ans:120}] };
+
+STATIONS.malkreuz = {
+  group:"profi", sym:"7·16", name:"Große Malaufgaben", desc:"7 · 16 oder 4 · 23: zerlegen und mit dem Malkreuz rechnen.",
+  video:"videos/9-grosse-malaufgaben.mp4",
+  make(){
+    const a = rnd(3,9); let b; do { b = rnd(12,49); } while (b % 10 === 0);
+    const T = Math.floor(b/10)*10, E = b % 10;
+    return { kind:"malkreuz", a, b, T, E, q:`${a} · ${b} = ?`, slots:[{label:`${a} · ${T} =`, ans:a*T},{label:`${a} · ${E} =`, ans:a*E},{label:"Ergebnis", ans:a*b}] };
+  },
+  hint(t, vals){
+    if (vals[2] === t.a*t.T + t.E) return `Vergiss nicht: Auch die ${t.E} Einer müssen <b>mal ${t.a}</b> genommen werden!`;
+    if (vals[2] !== vals[0] + vals[1] && vals[0] === t.a*t.T && vals[1] === t.a*t.E) return `Zähle die beiden Teile zusammen: ${vals[0]} + ${vals[1]}.`;
+    return null;
+  },
+  steps(t){
+    const {a, b, T, E} = t;
+    return [
+      { text:`${a} · ${b} steht in keiner Malreihe. Aber wir können <b>${b} zerlegen</b>: ${b} = <span class="b">${T}</span> + <span class="o">${E}</span>.`, vis:() => areaEl(a, T, E) },
+      { text:`Das Rechteck hat zwei Teile. Jeden rechnen wir einzeln:<br><span class="b">${a} · ${T} = ${a*T}</span> und <span class="o">${a} · ${E} = ${a*E}</span>`, vis:() => kreuzEl(a, T, E, true) },
+      { text:`Zusammenzählen: ${a*T} + ${a*E} = <span class="mk">${a*b}</span>`, vis:() => ruleBox("Zerlegen → beide Teile mal → zusammenzählen") },
+    ];
+  },
+};
+STATIONS.malkreuz.example = { kind:"malkreuz", a:7, b:16, T:10, E:6, q:"7 · 16 = ?", slots:[{label:"7 · 10 =", ans:70},{label:"7 · 6 =", ans:42},{label:"Ergebnis", ans:112}] };
+
+STATIONS.familie = {
+  group:"profi", sym:"3·5", name:"Rechentricks & Muster", desc:"Tauschaufgabe, Zahlenhaus, Nachbaraufgabe, Verdoppeln und Halbieren.",
+  video:"videos/10-rechentricks-muster.mp4",
+  make(){
+    const type = pick(["haus","nachbar","doppelt"]);
+    if (type === "haus"){
+      let a = rnd(2,9), b = rnd(2,9); if (a === b) b = b === 9 ? 8 : b + 1;
+      const p = a*b;
+      return { kind:"haus", a, b, p, small:true, q:`Zahlenhaus: <b>${a} · ${b} = ${p}</b>. Finde die anderen Aufgaben!`,
+        slots:[{label:`${b} · ${a} =`, ans:p},{label:`${p} : ${a} =`, ans:b},{label:`${p} : ${b} =`, ans:a}] };
+    }
+    if (type === "nachbar"){
+      const a = rnd(3,9), b = rnd(3,8), up = Math.random() < .6, nb = up ? b + 1 : b - 1;
+      return { kind:"nachbar", a, b, nb, up, small:true, q:`Du weißt: <b>${a} · ${b} = ${a*b}</b>. Wie viel ist <b>${a} · ${nb}</b>?`,
+        slots:[{label:`${a} · ${nb} =`, ans:a*nb}] };
+    }
+    const [a, b] = pick([[2,15],[2,25],[2,35],[2,45],[4,15],[4,25],[4,35],[4,45],[8,15],[8,25],[2,150],[4,125]]);
+    return { kind:"doppelt", a, b, q:`${a} · ${b} = ?`, slots:[{label:"Ergebnis", ans:a*b}] };
+  },
+  hint(t, vals){
+    if (t.kind === "nachbar" && vals[0] === t.a*t.b) return "Das ist die Aufgabe, die du schon weißt. Es ist eine Reihe mehr oder weniger!";
+    return null;
+  },
+  steps(t){
+    if (t.kind === "haus"){
+      const {a, b, p} = t;
+      return [
+        { text:`Die Zahlen <b>${a}</b>, <b>${b}</b> und <b>${p}</b> sind eine Familie. Sie wohnen in einem Zahlenhaus.`, vis:() => houseEl(a, b, p, 0) },
+        { text:`<b>Tauschaufgabe:</b> Beim Malnehmen darfst du tauschen. Dreh das Punktefeld, es sind dieselben Punkte.`,
+          vis:() => h("div",{class:"row", style:"gap:28px;justify-content:center"}, dotField(a, b), dotField(b, a, {rowClass:() => "o"})) },
+        { text:`<b>Umkehraufgaben:</b> Geteilt ist Mal rückwärts. ${p} : ${a} = ${b} und ${p} : ${b} = ${a}.`, vis:() => houseEl(a, b, p, 4) },
+      ];
+    }
+    if (t.kind === "nachbar"){
+      const {a, b, nb, up} = t;
+      const cols = Math.max(b, nb);
+      return [
+        { text:`${a} · ${b} heißt: ${a} Reihen mit je ${b} Punkten. Das sind ${a*b}.`, vis:() => dotField(a, b) },
+        { text:`Bei ${a} · ${nb} hat jede Reihe einen Punkt ${up ? "mehr" : "weniger"}. Das sind <b>${a} Punkte ${up ? "mehr" : "weniger"}</b>.`,
+          vis:() => dotField(a, cols, {colClass:c => c >= Math.min(b, nb) ? (up ? "o" : "x") : ""}) },
+        { text:`${a*b} ${up ? "+" : "−"} ${a} = <span class="mk">${a*nb}</span>`, vis:() => ruleBox("Nachbaraufgabe: eine Reihe mehr oder weniger") },
+      ];
+    }
+    const chain = []; let x = t.a, y = t.b;
+    while (x > 1){ x /= 2; y *= 2; chain.push(`${x} · ${y}`); }
+    return [
+      { text:`Profi-Trick: <b>Halbiere die eine Zahl, verdopple die andere.</b> Das Ergebnis bleibt gleich!`, vis:() => null },
+      { text:`Stell dir ein Rechteck vor. Wir schneiden es in der Mitte durch und legen die Hälften nebeneinander. Es wird halb so hoch, aber doppelt so lang.`,
+        vis:() => h("div",{class:"halves", html:`<div class="stk"><div class="hb"></div><div class="ho"></div></div><span>→</span><div class="side"><div class="hb"></div><div class="ho"></div></div>`}) },
+      { text:`${t.a} · ${t.b} = ${chain.join(" = ")} = <span class="mk">${t.a*t.b}</span>`, vis:() => ruleBox("Halbieren und Verdoppeln") },
+    ];
+  },
+};
+STATIONS.familie.example = { kind:"haus", a:3, b:5, p:15, small:true, q:"Zahlenhaus: <b>3 · 5 = 15</b>. Finde die anderen Aufgaben!",
+  slots:[{label:"5 · 3 =", ans:15},{label:"15 : 3 =", ans:5},{label:"15 : 5 =", ans:3}] };
+
+function houseEl(a, b, p, show){
+  const eqs = [`${a} · ${b} = ${p}`, `${b} · ${a} = ${p}`, `${p} : ${a} = ${b}`, `${p} : ${b} = ${a}`];
+  return h("div",{class:"house", html:`<div class="roof">${p}</div><div class="floor"><div>${a}</div><div>${b}</div></div>` +
+    (show ? `<div class="rooms">${eqs.map((e,i) => `<div class="${i<2?"b":"o"}">${e}</div>`).join("")}</div>` : "")});
+}
+
 /* Kekse austeilen (animiert) */
 let dealTimer = null;
 function dealVisual(n, d, _stage, instant=false){
@@ -565,9 +860,11 @@ function home(){
   clearInterval(dealTimer);
   app.replaceChildren(
     h("p",{class:"intro"}, "Such dir eine Station aus. Bei jeder Aufgabe kannst du auf „Zeig mir den Weg“ tippen. Dann wird dir Schritt für Schritt mit Bildern erklärt, wie man rechnet."),
-    h("div",{class:"stations"}, Object.entries(STATIONS).map(([id, s]) =>
-      h("button",{class:"station", onclick:() => stationStart(id)},
-        h("div",{class:"sym"}, s.sym), h("h3",{}, s.name), h("p",{}, s.desc))))
+    ...[["basis","Grundlagen"],["profi","Profi-Tricks für große Zahlen"]].flatMap(([g, title]) => [
+      h("h2",{class:"grouphead"}, title),
+      h("div",{class:"stations"}, Object.entries(STATIONS).filter(([, s]) => (s.group || "basis") === g).map(([id, s]) =>
+        h("button",{class:"station", onclick:() => stationStart(id)},
+          h("div",{class:"sym"}, s.sym), h("h3",{}, s.name), h("p",{}, s.desc))))])
   );
 }
 
@@ -667,7 +964,7 @@ function check(){
     state.done = true;
     const clean = state.tries === 0 && !state.helped;
     state.results[state.i] = clean ? "ok" : "help";
-    if (!clean) state.redo.push(t.q.replace(/<[^>]+>/g,""));
+    if (!clean) state.redo.push(t.plain || t.q.replace(/<[^>]+>/g,""));
     if (clean){ addStar(); state.fb = pick(["Super, richtig! ★","Klasse! ★","Genau so! ★","Stark gerechnet! ★"]); }
     else state.fb = "Richtig! Jetzt hast du's.";
     state.fbType = "good";
@@ -730,7 +1027,7 @@ function openSteps(station, task, onClose, demo=false){
     const last = k === steps.length-1;
     sheet.replaceChildren(
       h("div",{class:"row", style:"justify-content:space-between"},
-        h("div",{class:"stepno"}, `${demo ? "Beispiel: " : ""}${task.q.replace(/<[^>]+>/g,"")}  ·  Schritt ${k+1} von ${steps.length}`),
+        h("div",{class:"stepno"}, `${demo ? "Beispiel: " : ""}${task.plain || task.q.replace(/<[^>]+>/g,"")}  ·  Schritt ${k+1} von ${steps.length}`),
         h("button",{class:"back", onclick:close, "aria-label":"Schließen"}, "✕")),
       h("div",{class:"text", html:st.text}),
       vis,

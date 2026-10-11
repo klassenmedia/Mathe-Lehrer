@@ -9,7 +9,10 @@ from pathlib import Path
 from piper import PiperVoice, SynthesisConfig
 
 import engine
-from skripte import VIDEOS
+from skripte import VIDEOS as BASIS
+from skripte_profi import VIDEOS as PROFI
+
+VIDEOS = BASIS + PROFI
 
 HERE = Path(__file__).parent
 VOICE_DIR = HERE / ".voices"
