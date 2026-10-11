@@ -149,6 +149,40 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#f6f8fc}
 /* Muster */
 .muster{display:flex; flex-direction:column; gap:8px; font:800 70px/1.1 "Grandstander",sans-serif}
 .muster div{display:flex; gap:24px}
+
+/* ===== 3D-Optik ===== */
+#root{--blue-hi:#8fb5ff; --blue-lo:#1d4cb3; --orange-hi:#ffb877; --orange-lo:#9a4708; --line-lo:#aebbd3}
+.inner{perspective:1800px}
+.h, .eq, .title h1, .big, .pbox, .jchip, .kreuz, .roof{text-shadow:0 6px 0 rgba(28,47,94,.13)}
+.card, .rule, .captext, .chip, .pbox, .jchip, .tafel, .plate, .floor div, .rooms div{box-shadow:0 10px 0 var(--line-lo), 0 22px 30px rgba(28,47,94,.12)}
+.title .sym{box-shadow:0 14px 0 #b7cbef, 0 30px 40px rgba(28,47,94,.18)}
+.dot{background:radial-gradient(circle at 34% 30%, var(--blue-hi) 0 12%, var(--blue) 45%, var(--blue-lo) 100%); box-shadow:0 5px 8px rgba(28,47,94,.25)}
+.dot.o, .cookie{background:radial-gradient(circle at 34% 30%, var(--orange-hi) 0 12%, var(--orange) 45%, var(--orange-lo) 100%)}
+.cookie{box-shadow:0 6px 10px rgba(28,47,94,.25)}
+.bar, .sbar, .hplate{box-shadow:8px 8px 0 var(--blue-lo)}
+.cube, .scube{box-shadow:6px 6px 0 var(--orange-lo)}
+/* echte 3D-Klötze: Vorderseite + Deckel (::before) + Seite (::after) */
+.k3{position:absolute; width:36px; height:36px; background:var(--orange); border-radius:2px}
+.k3::before{content:""; position:absolute; left:0; bottom:100%; width:100%; height:14px; background:var(--orange-hi); transform:skewX(-45deg); transform-origin:left bottom}
+.k3::after{content:""; position:absolute; left:100%; top:0; width:14px; height:100%; background:var(--orange-lo); transform:skewY(-45deg); transform-origin:left top}
+.k3.st{height:360px; background:var(--blue); background-image:linear-gradient(rgba(255,255,255,.45) 2px,transparent 2px); background-size:100% 36px}
+.k3.st::before{background:var(--blue-hi)} .k3.st::after{background:var(--blue-lo)}
+.bstage{position:relative; width:1150px; height:530px; flex:none; background:var(--card); border:4px solid var(--line); border-radius:28px;
+  box-shadow:0 12px 0 var(--line-lo), 0 26px 40px rgba(28,47,94,.12)}
+.bstage .div{position:absolute; top:0; bottom:0; left:600px; width:4px; background:var(--line)}
+.bstage .blab{position:absolute; top:16px; text-align:center; font:800 44px "Grandstander",sans-serif}
+/* schriftliches Rechnen (untereinander) */
+.wr{display:grid; font:800 92px/1 "Grandstander",sans-serif; text-align:center; align-items:end}
+.wr > div{width:96px; height:110px; display:flex; align-items:center; justify-content:center; position:relative}
+.wr .hd{height:64px; font-size:44px}
+.wr .cr{height:58px; font-size:46px; color:var(--bad)}
+.wr .ln{height:0; border-top:8px solid var(--ink); width:100%}
+.wr .sm{position:absolute; top:-44px; left:0; right:0; font-size:44px; color:var(--bad)}
+.wr .x{position:absolute; left:14px; right:14px; top:50%; height:8px; margin-top:-4px; background:var(--bad); border-radius:4px; transform-origin:left center}
+.wr .hl{position:absolute; inset:0 6px; border-radius:16px; background:var(--marker); z-index:-1}
+.wr > div{isolation:isolate}
+.wr > div > span{display:block}
+.hz-row{display:flex; gap:24px; font:800 96px "Grandstander",sans-serif}
 </style>
 </head>
 <body>
@@ -166,13 +200,37 @@ const tl = gsap.timeline({ paused: true });
 const E = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 function sceneFade(S, T0, T1){
   const inner = S.querySelector(".inner");
-  tl.fromTo(inner, {opacity:0}, {opacity:1, duration:.35, ease:"power1.out"}, T0);
-  tl.to(inner, {opacity:0, duration:.3, ease:"power1.in"}, T1 - .3);
+  tl.fromTo(inner, {opacity:0, rotationX:14, y:70, scale:.9, transformPerspective:1800, transformOrigin:"50% 100%"},
+                   {opacity:1, rotationX:0, y:0, scale:1, duration:.6, ease:"power3.out"}, T0);
+  tl.to(inner, {opacity:0, rotationY:-18, x:-160, scale:.94, duration:.35, ease:"power2.in"}, T1 - .35);
 }
-function pop(els, at, stagger=0){ tl.fromTo(els, {scale:0, opacity:0}, {scale:1, opacity:1, duration:.45, ease:"back.out(2)", stagger}, at); }
-function rise(els, at, stagger=0){ tl.fromTo(els, {opacity:0, y:40}, {opacity:1, y:0, duration:.5, ease:"power2.out", stagger}, at); }
+function pop(els, at, stagger=0){ tl.fromTo(els, {scale:0, opacity:0, rotationY:-110, transformPerspective:900}, {scale:1, opacity:1, rotationY:0, duration:.6, ease:"back.out(1.8)", stagger}, at); }
+function rise(els, at, stagger=0){ tl.fromTo(els, {opacity:0, y:50, rotationX:-75, transformPerspective:900, transformOrigin:"50% 100%"}, {opacity:1, y:0, rotationX:0, duration:.6, ease:"back.out(1.4)", stagger}, at); }
+function drop(els, at, stagger=0){ tl.fromTo(els, {opacity:0, y:-260}, {opacity:1, y:0, duration:.7, ease:"bounce.out", stagger}, at); }
 function draw(els, at){ tl.fromTo(els, {scaleX:0}, {scaleX:1, duration:.45, ease:"power2.out"}, at); }
 function fadeTo(els, at, o=.25){ tl.to(els, {opacity:o, duration:.4}, at); }
+function blip(el, at){ tl.fromTo(el, {scale:1}, {scale:1.18, duration:.25, yoyo:true, repeat:1, ease:"power1.inOut"}, at); }
+// 3D-Klotz an Position (x,y = linke obere Ecke der Vorderseite)
+function klotz(host, kind, x, y){ const e = E("div", "k3" + (kind ? " " + kind : "")); e.style.left = x + "px"; e.style.top = y + "px"; host.append(e); return e; }
+function moveTo(el, from, to, at, dur=.7, ease="power2.inOut"){ tl.to(el, {x: to[0] - from[0], y: to[1] - from[1], duration: dur, ease}, at); }
+// Schriftliches Rechnen: cols = Stellen (z.B. ["H","Z","E"]), a/b = Ziffernfolgen, op = "+"/"−"
+function written(host, cols, a, b, op){
+  const n = cols.length, g = host; g.classList.add("wr"); g.style.gridTemplateColumns = `repeat(${n + 1}, 96px)`;
+  const cell = (cls, txt) => { const d = E("div", cls || "", txt); g.append(d); return d; };
+  const pad = (s) => s.padStart(n, " ").split("");
+  const R = {hd:[], cr:[], a:[], b:[], res:[]};
+  cell("hd", "");                    cols.forEach((c, i) => R.hd.push(cell("hd " + (c === "E" ? "o" : "b"), c)));
+  cell("cr", "");                    cols.forEach(() => R.cr.push(cell("cr", "")));
+  cell("", "");                      pad(a).forEach(ch => R.a.push(cell("", ch.trim())));
+  cell("", op);                      pad(b).forEach(ch => R.b.push(cell("", ch.trim())));
+  for (let i = 0; i <= n; i++) cell("ln", "");
+  cell("", "");                      cols.forEach(() => R.res.push(cell("", "")));
+  return R;
+}
+function put(cellEl, txt, cls){ const s = E("span", cls || "", txt); cellEl.append(s); return s; }
+function markAt(cellEl, at, hold=3){ const m = E("span", "hl"); cellEl.prepend(m); tl.fromTo(m, {opacity:0}, {opacity:1, duration:.3}, at); tl.to(m, {opacity:0, duration:.4}, at + hold); return m; }
+function plus_step(R, i, at, digit, carryTo, carryAt){ markAt(R.res[i], at, carryAt ? carryAt - at + 1 : 3); pop(put(R.res[i], digit, "g"), at + 1.6); if (carryTo != null) pop(put(R.cr[carryTo], "1"), carryAt); }
+function strikeCell(cellEl, at){ const x = E("span", "x"); cellEl.append(x); tl.fromTo(x, {scaleX:0, rotation:-20}, {scaleX:1, rotation:-20, duration:.4, ease:"power2.out"}, at); return x; }
 // Punktefeld: liefert Reihen [{row, dots, lab}]
 function field(host, rows, cols, size, color, labels){
   host.classList.add("field"); host.style.setProperty("--s", size + "px");
@@ -216,6 +274,7 @@ function cookies(host, n, d, init){
   return api;
 }
 %%SCENE_JS%%
+tl.fromTo("#bg", {backgroundPosition:"0px 0px"}, {backgroundPosition:"-480px -240px", duration: %%TOTAL%%, ease:"none"}, 0);
 window.__timelines["main"] = tl;
 </script>
 </body>

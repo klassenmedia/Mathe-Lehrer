@@ -211,6 +211,20 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--blue); outline-
 .halves span{font-size:28px; color:var(--ink-soft); margin-inline:8px}
 .field .d.x{opacity:.3}
 
+
+/* Übertrag */
+.hz-task{font-family:var(--display); font-weight:800; font-size:clamp(30px,8vw,44px); text-align:center}
+.hint-sm{font-size:15px; color:var(--ink-soft); text-align:center; margin-top:6px}
+.wgrid{display:grid; justify-content:center; margin:8px auto 0; font-family:var(--display); font-weight:800; font-size:28px; line-height:40px; text-align:center; font-variant-numeric:tabular-nums}
+.wgrid .wh{font-size:15px; line-height:22px} .wgrid .wc{font-size:16px; line-height:20px; color:var(--bad)}
+.wgrid .wl{border-top:4px solid var(--ink); height:0}
+.wgrid .st{color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--bad); text-decoration-thickness:3px}
+.wgrid .on{background:var(--marker); border-radius:6px}
+.wgrid .wr{min-height:40px}
+.tausch{display:flex; gap:10px; align-items:center; justify-content:center; font-weight:700; color:var(--ink-soft)}
+.tausch span{border:2px solid var(--line); border-radius:10px; padding:2px 10px; background:var(--paper); color:var(--ink)}
+.slot.one{min-width:58px}
+
 @media (max-width:520px){
   body{font-size:17px}
   .slot{min-width:84px; height:58px; font-size:30px}
@@ -814,6 +828,129 @@ STATIONS.familie = {
 STATIONS.familie.example = { kind:"haus", a:3, b:5, p:15, small:true, q:"Zahlenhaus: <b>3 · 5 = 15</b>. Finde die anderen Aufgaben!",
   slots:[{label:"5 · 3 =", ans:15},{label:"15 : 3 =", ans:5},{label:"15 : 5 =", ans:3}] };
 
+/* ===================== Übertrag: schriftlich Plus und Minus ===================== */
+const PLACES = ["E","Z","H","T","ZT"], PLACE_NAMES = {E:"Einer", Z:"Zehner", H:"Hunderter", T:"Tausender", ZT:"Zehntausender"};
+const digitsOf = (x, n) => String(x).padStart(n, " ").split("").map(c => c === " " ? null : +c);
+function colAlgo(a, b, op){
+  const res = op === "+" ? a + b : a - b, n = String(Math.max(a, res)).length;
+  const A = digitsOf(a, n), B = digitsOf(b, n), steps = [];
+  if (op === "+"){
+    let c = 0; const carries = Array(n).fill(null), out = Array(n).fill(null);
+    for (let i = n - 1; i >= 0; i--){
+      const s = (A[i] || 0) + (B[i] || 0) + c;
+      if (A[i] == null && B[i] == null && c === 0) break;
+      out[i] = s % 10; const cOut = s >= 10 ? 1 : 0;
+      if (cOut && i > 0) carries[i - 1] = 1;
+      steps.push({ i, da:A[i] || 0, db:B[i] || 0, c, s, digit:s % 10, cOut, carries:[...carries], out:[...out] });
+      c = cOut;
+    }
+    return { n, A, B, res, steps, op };
+  }
+  const top = A.map(d => d), tops = Array(n).fill(null), out = Array(n).fill(null);
+  for (let i = n - 1; i >= 0; i--){
+    if (top[i] == null) break;
+    const db = B[i] || 0, chain = [];
+    if (top[i] < db){
+      let j = i - 1; while (top[j] === 0) j--;
+      top[j]--; tops[j] = top[j]; chain.push(j);
+      for (let k = j + 1; k < i; k++){ top[k] = 9; tops[k] = 9; chain.push(k); }
+      top[i] += 10; tops[i] = top[i];
+    }
+    out[i] = top[i] - db;
+    steps.push({ i, top:top[i], db, digit:out[i], chain, tops:[...tops], out:[...out] });
+  }
+  return { n, A, B, res, steps, op };
+}
+function wgrid(al, {carries=null, tops=null, out=null, hl=-1}={}){
+  const {n, A, B, op} = al, places = PLACES.slice(0, n).reverse();
+  let h = `<div class="wgrid" style="grid-template-columns:repeat(${n + 1},38px)"><div></div>`;
+  places.forEach((p, i) => h += `<div class="wh${p === "E" ? " o" : " b"}${i === hl ? " on" : ""}">${p}</div>`);
+  h += `<div></div>`;
+  for (let i = 0; i < n; i++) h += `<div class="wc">${carries && carries[i] ? carries[i] : tops && tops[i] != null ? tops[i] : ""}</div>`;
+  h += `<div></div>`;
+  A.forEach((d, i) => h += `<div class="${i === hl ? "on" : ""}${tops && tops[i] != null ? " st" : ""}">${d ?? ""}</div>`);
+  h += `<div>${op}</div>`;
+  B.forEach((d, i) => h += `<div class="${i === hl ? "on" : ""}">${d ?? ""}</div>`);
+  h += `<div class="wl" style="grid-column:1 / span ${n + 1}"></div><div></div>`;
+  const lead = n - String(al.res).length;
+  for (let i = 0; i < n; i++) h += `<div class="wr g${i === hl ? " on" : ""}">${out && out[i] != null && i >= lead ? out[i] : ""}</div>`;
+  return h + `</div>`;
+}
+
+STATIONS.uebertrag = {
+  group:"profi", sym:"+¹", name:"Übertrag", desc:"Plus und Minus mit 2, 3 oder 4 Stellen. Untereinander schreiben, rechts anfangen.",
+  video:"videos/11-plus-mit-uebertrag.mp4", video2:"videos/12-minus-mit-uebertrag.mp4",
+  options: {label:"Wie viele Stellen?", values:[2,3,4], def:[2,3]},
+  make(sel){
+    const L = pick(sel.length ? sel : [2,3]), lo = 10 ** (L - 1), hi = 10 ** L - 1, op = Math.random() < .5 ? "+" : "−";
+    for (let tries = 0; tries < 200; tries++){
+      let a, b;
+      if (op === "+"){ a = rnd(lo, hi); b = rnd(lo, hi); if (a + b > 9999) continue; }
+      else {
+        a = rnd(lo + lo/2, hi);
+        if (L >= 3 && Math.random() < .35){ const s = String(a).split(""); s[L - 2] = "0"; a = +s.join(""); }
+        b = rnd(Math.max(lo/2 | 0, 2), a - 1);
+      }
+      const al = colAlgo(a, b, op === "+" ? "+" : "−");
+      const hasCarry = op === "+" ? al.steps.some(s => s.cOut) : al.steps.some(s => s.chain.length);
+      if (!hasCarry) continue;
+      const rd = String(al.res).split("").map(Number), m = rd.length;
+      const places = PLACES.slice(0, m).reverse();
+      return { kind:"uebertrag", a, b, op, al, small:true, rtl:true, startSlot:m - 1, plain:`${a} ${op} ${b}`,
+        q:`<div class="hz-task">${a} ${op} ${b} = ?</div><div class="hint-sm">Schreib's im Kopf untereinander:</div>${wgrid(al)}`,
+        slots: rd.map((d, i) => ({label:places[i], ans:d, len:1})) };
+    }
+    return this.make(sel);
+  },
+  hint(t, vals){
+    const v = +vals.join(""), {al} = t;
+    if (t.op === "+"){
+      const noCarry = +al.A.map((d, i) => ((d || 0) + (al.B[i] || 0)) % 10).join("");
+      if (v === noCarry || v === noCarry % 10 ** (vals.length)) return "Du hast den <b>Übertrag vergessen</b>! Wenn es 10 oder mehr sind, wandert die 1 eine Stelle nach links.";
+    } else {
+      const flip = +al.A.map((d, i) => Math.abs((d || 0) - (al.B[i] || 0))).join("");
+      if (v === flip) return "Achtung: Du hast <b>von unten nach oben</b> gerechnet. Ist oben zu wenig, musst du beim linken Nachbarn <b>einen aufmachen</b> und in 10 tauschen.";
+    }
+    return "Fang rechts bei den Einern an und rechne Stelle für Stelle. Tipp: Lass dir den Weg zeigen.";
+  },
+  steps(t){
+    const {al, op} = t, places = PLACES.slice(0, al.n).reverse(), st = [];
+    st.push({ text:`Schreib die Zahlen <b>untereinander</b>: Einer unter Einer, Zehner unter Zehner. Dann fang <b>rechts bei den Einern</b> an.`,
+      vis:() => h("div",{class:"visual", html:wgrid(al)}) });
+    al.steps.forEach(s => {
+      const P = PLACE_NAMES[places[s.i]], L = s.i > 0 ? PLACE_NAMES[places[s.i - 1]] : "";
+      let text;
+      if (op === "+"){
+        if (al.A[s.i] == null && al.B[s.i] == null){
+          st.push({ text:`<b>${P}:</b> Hier steht nur noch der Übertrag <span class="r">1</span>. Den schreiben wir einfach hin: <span class="mk">1</span>.`,
+            vis:() => h("div",{class:"visual", html:wgrid(al, {carries:s.carries, out:s.out, hl:s.i})}) });
+          return;
+        }
+        text = `<b>${P}:</b> ${s.da} + ${s.db}${s.c ? ` + <span class="r">1</span> (Übertrag)` : ""} = ${s.s}.`;
+        text += s.cOut ? ` Das sind 10 oder mehr! Schreibe <span class="mk">${s.digit}</span>, die <span class="r">1</span> wandert zu den ${L}n.` : ` Schreibe <span class="mk">${s.digit}</span>.`;
+        st.push({ text, vis:() => h("div",{class:"visual", html:wgrid(al, {carries:s.carries, out:s.out, hl:s.i}) +
+          (s.cOut ? `<div class="tausch"><span>10 ${P}</span>→<span>1 ${L.replace(/n$/,"")}</span></div>` : "")}) });
+      } else {
+        const orig = al.A[s.i];
+        if (s.chain.length){
+          const j = s.chain[0], Pj = PLACE_NAMES[places[j]];
+          text = `<b>${P}:</b> ${orig} − ${s.db} geht nicht, oben ist zu wenig! `;
+          text += s.chain.length > 1 ? `Links daneben steht eine 0. Also gehen wir weiter bis zu den ${Pj}n und machen dort einen auf. ` : `Wir machen bei den ${Pj}n einen auf und tauschen ihn in 10. `;
+          text += `Jetzt ${s.top} − ${s.db} = <span class="mk">${s.digit}</span>.`;
+        } else text = `<b>${P}:</b> ${s.top} − ${s.db} = <span class="mk">${s.digit}</span>.`;
+        st.push({ text, vis:() => h("div",{class:"visual", html:wgrid(al, {tops:s.tops, out:s.out, hl:s.i}) +
+          (s.chain.length ? `<div class="tausch"><span>1 aufmachen</span>→<span>10 tauschen</span></div>` : "")}) });
+      }
+    });
+    st.push({ text:`Ergebnis: <span class="mk">${t.a} ${op} ${t.b} = ${al.res}</span>` + (op === "−" ? `<br><b>Probe:</b> ${al.res} + ${t.b} = ${t.a} ✔` : ""),
+      vis:() => ruleBox(op === "+" ? "10 oder mehr? Die 1 wandert nach links." : "Oben zu wenig? Links einen aufmachen und in 10 tauschen.") });
+    return st;
+  },
+};
+STATIONS.uebertrag.example = (() => { const al = colAlgo(47, 38, "+");
+  return { kind:"uebertrag", a:47, b:38, op:"+", al, small:true, rtl:true, startSlot:1, plain:"47 + 38",
+    q:`<div class="hz-task">47 + 38 = ?</div>${wgrid(al)}`, slots:[{label:"Z", ans:8, len:1},{label:"E", ans:5, len:1}] }; })();
+
 function houseEl(a, b, p, show){
   const eqs = [`${a} · ${b} = ${p}`, `${b} · ${a} = ${p}`, `${p} : ${a} = ${b}`, `${p} : ${b} = ${a}`];
   return h("div",{class:"house", html:`<div class="roof">${p}</div><div class="floor"><div>${a}</div><div>${b}</div></div>` +
@@ -890,7 +1027,8 @@ function stationStart(id){
   }
   const go = h("button",{class:"btn", onclick:() => startRound(id, sel)}, "Los geht's: 10 Aufgaben");
   kids.push(h("div",{class:"row"},
-    h("button",{class:"btn warm", onclick:() => openVideo(s)}, "▶ Erklärvideo"),
+    h("button",{class:"btn warm", onclick:() => openVideo(s)}, s.video2 ? "▶ Video: Plus" : "▶ Erklärvideo"),
+    s.video2 ? h("button",{class:"btn warm", onclick:() => openVideo({...s, video:s.video2})}, "▶ Video: Minus") : null,
     h("button",{class:"btn alt", onclick:() => openSteps(s, s.example, null, true)}, "Schritt für Schritt"),
     go));
   app.replaceChildren(h("div",{class:"panel stack"}, kids));
@@ -906,7 +1044,7 @@ function nextTask(){
   if (state.i >= 10) return summary();
   state.task = s.make(state.sel);
   state.vals = state.task.slots.map(() => "");
-  state.active = 0; state.tries = 0; state.helped = false; state.done = false;
+  state.active = state.task.startSlot || 0; state.tries = 0; state.helped = false; state.done = false;
   renderTask();
 }
 
@@ -919,7 +1057,7 @@ function renderTask(){
   }
   const slots = h("div",{class:"slots"});
   t.slots.forEach((sl, k) => {
-    const b = h("button",{class:"slot" + (k===state.active && !state.done ? " active":""), "aria-label":sl.label,
+    const b = h("button",{class:"slot" + (sl.len === 1 ? " one" : "") + (k===state.active && !state.done ? " active":""), "aria-label":sl.label,
       onclick:() => { state.active = k; renderTask(); }}, state.vals[k] || " ");
     if (state.marks) b.classList.add(state.marks[k] ? "right" : "wrong");
     slots.append(h("div",{class:"slotbox"}, b, h("small",{}, sl.label)));
@@ -947,8 +1085,12 @@ function press(k){
   if (state.done) return;
   state.marks = null;
   if (k === "⌫") state.vals[state.active] = state.vals[state.active].slice(0,-1);
-  else if (k === "▸") state.active = (state.active + 1) % state.task.slots.length;
-  else if (state.vals[state.active].length < 3) state.vals[state.active] += k;
+  else if (k === "▸"){ const n = state.task.slots.length; state.active = state.task.rtl ? (state.active - 1 + n) % n : (state.active + 1) % n; }
+  else {
+    const len = state.task.slots[state.active].len || 3;
+    if (len === 1) state.vals[state.active] = k; else if (state.vals[state.active].length < len) state.vals[state.active] += k;
+    if (len === 1 && state.task.rtl && state.active > 0) state.active--;
+  }
   renderTask();
 }
 

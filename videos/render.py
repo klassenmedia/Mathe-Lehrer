@@ -11,8 +11,9 @@ from piper import PiperVoice, SynthesisConfig
 import engine
 from skripte import VIDEOS as BASIS
 from skripte_profi import VIDEOS as PROFI
+from skripte_uebertrag import VIDEOS as UEBERTRAG
 
-VIDEOS = BASIS + PROFI
+VIDEOS = BASIS + PROFI + UEBERTRAG
 
 HERE = Path(__file__).parent
 VOICE_DIR = HERE / ".voices"

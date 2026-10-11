@@ -1,0 +1,16 @@
+Zahlenwerkstatt – Erklärvideos (Full HD, volle Qualität)
+
+01 Malreihen                – Punktefeld, Kernaufgaben, Tricks (9·6 = 10·6 − 6)
+02 Teilen mit Rest          – Kekse verteilen, Rest ist immer kleiner als der Teiler
+03 Minus-Rechenwege         – erst Zehner, dann Einer, Zehner tauschen
+04 Punkt vor Strich         – · und : zuerst
+05 Fachwoerter              – Faktor, Produkt, Dividend, Divisor, Quotient
+06 Zahlen bis 1000          – Hunderter, Zehner, Einer; die Null als Platzhalter
+07 Plus und Minus gross     – Überschlag, stellenweise, fast runde Zahlen
+08 Kleine Aufgabe hilft     – 3·40 über 3·4, 120:4 über 12:4
+09 Grosse Malaufgaben       – zerlegen, Malkreuz
+10 Rechentricks und Muster  – Tauschaufgabe, Zahlenhaus, Nachbaraufgabe, Halbieren/Verdoppeln
+11 Plus mit Uebertrag       – nebeneinander → untereinander, 10 Würfel werden 1 Stange, 2–4 Stellen
+12 Minus mit Uebertrag      – Zehner aufmachen und tauschen, auch über eine 0 hinweg
+
+Kleinere Kopien für das Spiel liegen in videos/.
