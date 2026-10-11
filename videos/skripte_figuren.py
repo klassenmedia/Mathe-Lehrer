@@ -18,7 +18,7 @@ function renderAt(t){
     intro: (t - .3) / .8,
     talk: spricht(t) ? 1 : 0,
     wave: (t > s0 && t < s0 + SAY[0][1]) || t > letzte[0] ? 1 : 0,
-    hop: t > letzte[0] + .3 ? 1 : 0,
+    hop: helfer.ease((t - letzte[0] - .3) / .4),
     look: i === 1 ? -.15 : i === 2 ? .2 : 0,
   });
   B.render();

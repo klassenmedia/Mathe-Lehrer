@@ -253,7 +253,8 @@ function ei(a, b, bauch = .08, seg = 96){
 const clamp = (x, a = -1, b = 1) => Number.isFinite(x) ? Math.min(b, Math.max(a, x)) : 0;
 export function eule(){
   const root = new THREE.Group(), body = new THREE.Group(), hals = new THREE.Group(), head = new THREE.Group();
-  root.add(body); body.add(hals); hals.add(head);
+  const sprung = new THREE.Group();                                       // hebt beim Hüpfen Körper und Füße gemeinsam an
+  root.add(sprung); sprung.add(body); body.add(hals); hals.add(head);
   hals.position.set(0, 2.2, .02); head.position.set(0, .58, 0); hals.rotation.order = "YXZ";
   const fK = koerperTextur(), fKopf = kopfTextur(), fFl = fluegelTextur();
   const feder = (map, extra = {}) => PM({ map, bumpMap: map, bumpScale: .9, sheen: .7, sheenRoughness: .55, sheenColor: new THREE.Color(0xffe2c0), ...extra });
@@ -279,7 +280,7 @@ export function eule(){
     head.add(mesh(kugel(.028, 12, 8), glanz, [x - .07, -.1, 1.19]));
     const lid = put(head, mesh(new THREE.SphereGeometry(.355, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), lidM, [x, .02, .92], [1, 1, .78])); lider.push(lid);
     const unterlid = put(head, mesh(new THREE.SphereGeometry(.352, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), lidM, [x, .02, .92], [1, 1, .78])); unterlider.push(unterlid);
-    const br = put(head, mesh(new THREE.TorusGeometry(.26, .045, 12, 32, Math.PI * .7), dunkel, [x * 1.04, .3, .96], [1, 1, .6])); br.rotation.z = Math.PI * .15; br.userData.sd = sd; brauen.push(br);   // Bogen nach oben = freundlich
+    const br = put(head, mesh(new THREE.TorusGeometry(.26, .045, 12, 32, Math.PI * .7), dunkel, [x * 1.04, .3, .96], [1, 1, .6])); br.rotation.z = Math.PI * .15; brauen.push(br);   // Bogen nach oben = freundlich
   });
   head.add(mesh(kugel(.28, 32, 24), braun, [0, .26, .92], [.42, .78, .42]));   // braune Federspitze zwischen den Augen
   // Schnabel: kurz, nach unten gebogen
@@ -318,9 +319,12 @@ export function eule(){
     w.g.rotation.x = -.05 - offen * .1;
     w.m.scale.set(w.sd * (1 + .22 * spread), 1 + .08 * spread, 1);
   };
+  // Federhosen: kurze gefiederte Beine verbinden Bauch und Füße
+  const hoseM = PM({ color: 0xe9d6b6, roughness: .9, sheen: .8, sheenRoughness: .5, sheenColor: new THREE.Color(0xffffff) });
+  [-.45, .45].forEach(x => sprung.add(mesh(kugel(.24, 32, 24), hoseM, [x, .3, .42], [1, 1.1, 1])));
   // Füße: drei kräftige Zehen mit dunklen Krallen
   [-.45, .45].forEach(x => [-.14, 0, .14].forEach(d => {
-    const zeh = new THREE.Group(); zeh.position.set(x + d * .9, .09, .66); zeh.rotation.y = d * 1.6; root.add(zeh);
+    const zeh = new THREE.Group(); zeh.position.set(x + d * .9, .09, .66); zeh.rotation.y = d * 1.6; sprung.add(zeh);
     const z = mesh(new THREE.CapsuleGeometry(.08, .18, 8, 16), fussM, [0, 0, .08]); z.rotation.x = Math.PI / 2; zeh.add(z);
     const k = mesh(new THREE.ConeGeometry(.04, .1, 12), krallenM, [0, -.03, .24]); k.rotation.x = Math.PI * .62; zeh.add(k);
   }));
@@ -338,8 +342,11 @@ export function eule(){
   const LID_OFFEN = -1.75, LID_ZU = 1.45, LID_RUHE = -1.3, UNTERLID_RUHE = .8, UNTERLID_OFFEN = 1.4;
   return { root, update(t, s = {}){
     root.scale.setScalar(Math.max(backOut(s.intro ?? 1) || 0, .001));
-    body.position.y = Math.sin(t * 1.9) * .035 + (s.hop ?? 0) * Math.abs(Math.sin(t * 6)) * .3;
-    body.scale.set(1 + Math.sin(t * 1.9) * .008, 1 - Math.sin(t * 1.9) * .008, 1);
+    const hoehe = Math.abs(Math.sin(t * 6)), hop = clamp(s.hop ?? 0, 0, 1);
+    sprung.position.y = hop * hoehe * .3;
+    const dehnen = hop * (hoehe - .5) * .08;                                // in der Luft gestreckt, bei der Landung gestaucht
+    body.position.y = Math.sin(t * 1.9) * .035;
+    body.scale.set(1 + Math.sin(t * 1.9) * .008 - dehnen * .5, 1 - Math.sin(t * 1.9) * .008 + dehnen, 1);
     body.rotation.z = clamp(s.lehnen ?? 0) * .12;
     // Kopf frei (look = alter Parameter, schwächer, damit alte Drehbücher gleich aussehen): kopf = drehen, nicken = hoch/runter, neigen = schräg (jeweils -1 … 1)
     const dreh = clamp((s.kopf ?? 0) + (s.look ?? 0) * .45), nick = clamp(s.nicken ?? 0), neig = clamp(s.neigen ?? 0);
