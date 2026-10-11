@@ -30,3 +30,8 @@ cd videos && python3 render.py            # alle Videos
 python3 render.py 2-teilen-mit-rest       # nur eins
 ```
 Die Stimme (Piper „Thorsten“, offline) wird beim ersten Lauf heruntergeladen. Gerendert wird mit [HyperFrames](https://hyperframes.heygen.com).
+
+## Stand und nächste Ideen (für eine neue Session)
+- Branch: `claude/mathe-lernspiel-grundschule-wwonn7`. Spiel = `index.html`, Videos-Quellcode = `videos/`, fertige Videos in voller Qualität = `Erklaervideos/`, komprimierte Kopien fürs Spiel = `videos/*.mp4` (CRF 28).
+- Neu rendern: `cd videos && python3 render.py [video-id …]`, danach für das Spiel mit ffmpeg komprimieren (`-crf 28 -tune animation`).
+- Offen: bessere Stimme. Kostenlos ist aktuell Piper „Thorsten low“. Besser wäre ElevenLabs (z. B. über Higgsfield, ca. 100–150 Credits für alle Videos) oder Piper „thorsten high“ (braucht Zugriff auf huggingface.co).
