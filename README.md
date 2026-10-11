@@ -41,7 +41,7 @@ Die Stimme (Piper „Thorsten“, offline) wird beim ersten Lauf heruntergeladen
 - Posen über `update(t, {talk, wave, point, pointL, hop, look, intro, kopf, nicken, neigen, blick, staunen, lehnen})`. `kopf`/`nicken`/`neigen`/`lehnen` jeweils −1 … 1, `blick: [x, y]` (−1 … 1, ohne Angabe folgt der Blick der Kopfdrehung), `staunen` 0 … 1 (Augen weit auf, Brauen hoch).
 - Vorschau ohne Video: `cd videos/assets && python3 -m http.server 8765`, dann `http://localhost:8765/eule-vorschau.html#point:1` (oder `#rest:1`, `#wave:1`, `#links:1`, `#hoch:1`, `#schraeg:1`, `#live` = Kopf und Augen bewegen sich dauernd).
 - Bühne mit weichen Schatten: `buehne(canvas, 1920, 1080, { weich: true })`.
-- Video-Drehbuch mit der Eule: `videos/skripte_figuren.py` (Video `0-oskar-stellt-sich-vor`) – **noch nicht mit den neuen Flügeln gerendert**: `cd videos && python3 render.py 0-oskar-stellt-sich-vor`.
+- Video-Drehbuch mit der Eule: `videos/skripte_figuren.py` (Video `0-oskar-stellt-sich-vor`, gerendert: `Erklaervideos/00 Oskar stellt sich vor.mp4`, fürs Spiel `videos/0-oskar-stellt-sich-vor.mp4`). Neu: `cd videos && python3 render.py 0-oskar-stellt-sich-vor`.
 - Offen: Flügel noch feiner (Form/Muster), Oskar in die Erklärvideos einbauen (z. B. am Rand, zeigt auf die Rechnung), bessere Stimme.
 
 ### Ältere Low-Poly-Figuren
