@@ -35,14 +35,24 @@ def sprich(text):
     return re.sub(r"\s+", " ", t).strip()
 
 
-def synth(voice, cfg, text, path):
+def synth(voice, cfg, text, path, pitch=1.0):
     with wave.open(str(path), "wb") as w:
         voice.synthesize_wav(text, w, syn_config=cfg)
+    if pitch != 1.0:
+        import subprocess
+        with wave.open(str(path), "rb") as r:
+            sr = r.getframerate()
+        tmp = path.with_suffix(".p.wav")
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(path), "-af",
+                        f"asetrate={int(sr * pitch)},aresample={sr},atempo={1 / pitch:.4f}", "-ac", "1", "-c:a", "pcm_s16le", str(tmp)], check=True)
+        tmp.replace(path)
     with wave.open(str(path), "rb") as r:
         return r.getnframes() / r.getframerate(), r.getframerate(), r.readframes(r.getnframes())
 
 
-def build(video, out_root, voice, cfg):
+def build(video, out_root, voice, cfg, stimmen=None):
+    """stimmen: {sprecher: (PiperVoice, SynthesisConfig, tonhoehe)} für Figuren."""
+    stimmen = stimmen or {}
     out = out_root / video["id"]
     if out.exists():
         shutil.rmtree(out)
@@ -53,7 +63,7 @@ def build(video, out_root, voice, cfg):
     pcm = bytearray()
     rate = None
     t = LEAD_IN
-    scenes, caps = [], []
+    scenes, caps, say_tl = [], [], []
 
     def silence(sec):
         pcm.extend(b"\x00\x00" * int(sec * rate))
@@ -61,8 +71,10 @@ def build(video, out_root, voice, cfg):
     for si, sc in enumerate(video["scenes"]):
         start = t
         starts, durs = [], []
-        for k, cap in enumerate(sc["say"]):
-            dur, r, frames = synth(voice, cfg, sprich(cap), out / "tmp" / f"{si}_{k}.wav")
+        for k, item in enumerate(sc["say"]):
+            who, cap = item if isinstance(item, tuple) else (None, item)
+            v, c, pitch = stimmen.get(who, (voice, cfg, 1.0))
+            dur, r, frames = synth(v, c, sprich(cap), out / "tmp" / f"{si}_{k}.wav", pitch)
             if rate is None:
                 rate = r
                 silence(LEAD_IN)
@@ -72,7 +84,8 @@ def build(video, out_root, voice, cfg):
             t += dur
             pause = GAP if k < len(sc["say"]) - 1 else SCENE_TAIL
             silence(pause)
-            caps.append((cap, starts[-1], round(dur + pause, 3)))
+            caps.append(((f"{who.capitalize()}: " if who else "") + cap, starts[-1], round(dur + pause, 3)))
+            say_tl.append([starts[-1], round(dur, 3), who])
             t += pause
         scenes.append(dict(i=si, html=sc["html"], js=sc.get("js", ""), start=round(start, 3),
                            end=round(t, 3), t=starts, d=durs))
@@ -100,7 +113,19 @@ def build(video, out_root, voice, cfg):
         for s in scenes)
 
     page = (HERE / "template.html").read_text(encoding="utf-8")
+    if video.get("three"):
+        three_canvas = '<canvas id="three-layer"></canvas>'
+        three_js = ('<script>window.__hf = window.__hf || {}; window.__hf.buildReady = window.__hf.buildReady || {};'
+                    'window.__hf.buildReady.figuren = new Promise(r => window.figurenFertig = r);</script>\n'
+                    '<script type="module">\n' + video["three"] + '\n</script>')
+    else:
+        three_canvas = three_js = ""
+    meta = (f"<script>window.SAY = {json.dumps(say_tl)}; window.SCN = "
+            f"{json.dumps([[s['start'], s['end']] for s in scenes])}; window.renderHooks = [];</script>")
     page = (page.replace("%%TOTAL%%", str(total))
+                .replace("%%THREE_CANVAS%%", three_canvas)
+                .replace("%%THREE_JS%%", three_js)
+                .replace("%%META%%", meta)
                 .replace("%%TOPIC%%", html.escape(video["topic"]))
                 .replace("%%SCENES%%", scene_html)
                 .replace("%%CAPTIONS%%", cap_html)

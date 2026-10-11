@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920, height=1080">
 <script src="gsap.min.js"></script>
+%%META%%
 <style>
 @font-face{font-family:"Andika";font-weight:400;src:url("andika-latin-400-normal.woff2") format("woff2")}
 @font-face{font-family:"Andika";font-weight:700;src:url("andika-latin-700-normal.woff2") format("woff2")}
@@ -150,6 +151,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#f6f8fc}
 .muster{display:flex; flex-direction:column; gap:8px; font:800 70px/1.1 "Grandstander",sans-serif}
 .muster div{display:flex; gap:24px}
 
+#three-layer{position:absolute; inset:0; width:100%; height:100%; display:block}
 /* ===== 3D-Optik ===== */
 #root{--blue-hi:#8fb5ff; --blue-lo:#1d4cb3; --orange-hi:#ffb877; --orange-lo:#9a4708; --line-lo:#aebbd3}
 .inner{perspective:1800px}
@@ -201,6 +203,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#f6f8fc}
 <div id="root" data-composition-id="main" data-start="0" data-duration="%%TOTAL%%" data-width="1920" data-height="1080">
   <div id="bg"></div>
   <div id="margin"></div>
+  %%THREE_CANVAS%%
   <div id="brand">Zahlen<span>werkstatt</span></div>
   <div id="topic">%%TOPIC%%</div>
   <audio id="voice" src="voice.wav" data-start="0" data-duration="%%TOTAL%%"></audio>
@@ -330,8 +333,12 @@ function cookies(host, n, d, init){
   return api;
 }
 %%SCENE_JS%%
+// Figuren-Layer (Three.js) wird über die Timeline gezeichnet, damit jedes Bild exakt zur Zeit passt
+const hookObj = {v:0};
+tl.to(hookObj, {v:1, duration: %%TOTAL%%, ease:"none", onUpdate(){ const tt = tl.time(); window.renderHooks.forEach(f => f(tt)); }}, 0);
 tl.fromTo("#bg", {backgroundPosition:"0px 0px"}, {backgroundPosition:"-480px -240px", duration: %%TOTAL%%, ease:"none"}, 0);
 window.__timelines["main"] = tl;
 </script>
+%%THREE_JS%%
 </body>
 </html>

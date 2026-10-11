@@ -36,6 +36,13 @@ Die Stimme (Piper „Thorsten“, offline) wird beim ersten Lauf heruntergeladen
 - Oder alles auf einmal: auf GitHub „Code“ → „Download ZIP“ (bei ausgewähltem Branch).
 - Oder per Git: `git clone -b claude/mathe-lernspiel-grundschule-wwonn7 https://github.com/klassenmedia/mathe-lehrer.git`
 
+## 3D-Figuren
+`videos/assets/figuren.js` baut drei eigene Low-Poly-Figuren mit Three.js: **Oskar** (Eule, Erklärer), **Robbi** (Rechenroboter), **Zacki** (Zahlen-Dino). Sie können sprechen (Mund synchron zur Stimme), blinzeln, winken, hüpfen und schauen. Jede Figur hat eine eigene Stimme (Tonhöhe). Ein Video mit Figuren bekommt im Drehbuch ein `three`-Skript und Sätze als `("oskar", "Text")` – Beispiel: `videos/skripte_figuren.py` (Video 00).
+
+## Videos auf den eigenen Rechner holen
+- GitHub → Repo `klassenmedia/mathe-lehrer` → Branch `claude/mathe-lernspiel-grundschule-wwonn7` → Ordner `Erklaervideos` → Video anklicken → Download.
+- Oder „Code“ → „Download ZIP“ (mit ausgewähltem Branch).
+
 ## Stand und nächste Ideen (für eine neue Session)
 - Branch: `claude/mathe-lernspiel-grundschule-wwonn7`. Spiel = `index.html`, Videos-Quellcode = `videos/`, fertige Videos in voller Qualität = `Erklaervideos/`, komprimierte Kopien fürs Spiel = `videos/*.mp4` (CRF 28).
 - Neu rendern: `cd videos && python3 render.py [video-id …]`, danach für das Spiel mit ffmpeg komprimieren (`-crf 28 -tune animation`).

@@ -13,8 +13,9 @@ from skripte import VIDEOS as BASIS
 from skripte_profi import VIDEOS as PROFI
 from skripte_uebertrag import VIDEOS as UEBERTRAG
 from skripte_nebeneinander import VIDEOS as NEBEN
+from skripte_figuren import VIDEOS as FIGUREN
 
-VIDEOS = BASIS + PROFI + UEBERTRAG + NEBEN
+VIDEOS = BASIS + PROFI + UEBERTRAG + NEBEN + FIGUREN
 
 HERE = Path(__file__).parent
 VOICE_DIR = HERE / ".voices"
@@ -23,12 +24,12 @@ VOICE_URL = "https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-de-
 HF = "hyperframes@0.8.147"
 
 
-def ensure_voice():
-    if VOICE.exists():
+def ensure_voice(path=VOICE, url=VOICE_URL):
+    if path.exists():
         return
     VOICE_DIR.mkdir(exist_ok=True)
     tgz = VOICE_DIR / "voice.tgz"
-    urllib.request.urlretrieve(VOICE_URL, tgz)
+    urllib.request.urlretrieve(url, tgz)
     with tarfile.open(tgz) as t:
         t.extractall(VOICE_DIR, filter="data")
     tgz.unlink()
@@ -58,10 +59,13 @@ def main(ids):
     voice = PiperVoice.load(str(VOICE))
     fix_phonemes(voice)
     cfg = SynthesisConfig(length_scale=1.12)
+    stimmen = {"oskar": (voice, SynthesisConfig(length_scale=1.12), 1.0),
+               "robbi": (voice, SynthesisConfig(length_scale=1.02), 1.14),
+               "zacki": (voice, SynthesisConfig(length_scale=1.0), 1.38)}
     for v in VIDEOS:
         if ids and v["id"] not in ids:
             continue
-        out, total = engine.build(v, HERE / "build", voice, cfg)
+        out, total = engine.build(v, HERE / "build", voice, cfg, stimmen)
         print(f"{v['id']}: {total:.1f} s")
         if "--no-render" in sys.argv:
             continue
