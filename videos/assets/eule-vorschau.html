@@ -1,0 +1,11 @@
+<!doctype html><html><body style="margin:0;background:#f6f8fc">
+<canvas id="c" style="width:1920px;height:1080px;display:block"></canvas>
+<script type="module">
+import { eule, buehne } from "./figuren.js";
+const B = buehne(document.getElementById("c"), 1920, 1080, { weich: true });
+const [mode, t] = (location.hash.slice(1) || "rest:1").split(":");
+const a = eule(); B.scene.add(a.root);
+B.camera.position.set(0, 2.6, 11.5); B.camera.lookAt(0, 1.9, 0);
+a.update(+t, mode === "rest" ? {} : mode === "point" ? { point: 1 } : { wave: 1 });
+B.render(); document.title = "ok";
+</script></body></html>

@@ -147,15 +147,157 @@ export function zacki(){
   }};
 }
 
+
+// ---------- Oskar (glatte Version): runde, weich beleuchtete Eule ----------
+function federTextur(base, linie, seed, groesse = 34){
+  const c = document.createElement("canvas"); c.width = c.height = 512; const g = c.getContext("2d"), r = prng(seed);
+  g.fillStyle = base; g.fillRect(0, 0, 512, 512);
+  for (let row = -1; row < 512 / (groesse * .55) + 2; row++)
+    for (let col = -1; col < 512 / groesse + 2; col++){
+      const x = col * groesse + (row % 2) * groesse / 2 + (r() - .5) * 5, y = row * groesse * .55;
+      g.beginPath(); g.arc(x, y, groesse * .52, .15, Math.PI - .15);
+      g.strokeStyle = linie; g.globalAlpha = .28 + r() * .22; g.lineWidth = 3.2; g.stroke();
+    }
+  g.globalAlpha = 1;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+}
+const PM = (o) => new THREE.MeshPhysicalMaterial({ roughness: .78, metalness: 0, ...o });
+const kugel = (r, ws = 64, hs = 48) => new THREE.SphereGeometry(r, ws, hs);
+export function eule(){
+  const root = new THREE.Group(), body = new THREE.Group(), head = new THREE.Group(); root.add(body); body.add(head);
+  const fBraun = federTextur("#7a4628", "#4a2814", 7), fHell = federTextur("#ecd2a8", "#b98a5c", 8, 26), fFluegel = federTextur("#5e3720", "#331a0c", 9, 40);
+  fBraun.repeat.set(3, 2); fHell.repeat.set(2, 2); fFluegel.repeat.set(1, 2);
+  const braun = PM({ map: fBraun, bumpMap: fBraun, bumpScale: 1.4, sheen: .6, sheenColor: new THREE.Color(0xffd9b0), sheenRoughness: .6 });
+  const hell = PM({ map: fHell, bumpMap: fHell, bumpScale: 1.0, sheen: .5, sheenColor: new THREE.Color(0xffffff) });
+  const fluegel = PM({ map: fFluegel, bumpMap: fFluegel, bumpScale: 1.6, sheen: .5, sheenColor: new THREE.Color(0xffc89a) });
+  const gesicht = PM({ color: 0xf1dcbc, roughness: .9, sheen: .4, sheenColor: new THREE.Color(0xffffff) });
+  const iris = PM({ color: 0xf5a623, roughness: .15, clearcoat: 1, clearcoatRoughness: .05 });
+  const pupilleM = PM({ color: 0x111014, roughness: .1, clearcoat: 1 });
+  const glanz = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const schnabelM = PM({ color: 0xd9962f, roughness: .45, clearcoat: .6 });
+  const fussM = PM({ color: 0xe8a33d, roughness: .5 });
+  const hutM = PM({ color: 0x1f2b55, roughness: .55, clearcoat: .3 }), quaste = PM({ color: 0xf5c518, roughness: .5 });
+  // Rumpf und Bauch
+  body.add(mesh(kugel(1.25), braun, [0, 1.35, 0], [1, 1.1, .95]));
+  body.add(mesh(kugel(.88), hell, [0, 1.25, .68], [1, 1.08, .52]));
+  // Kopf
+  head.position.set(0, 2.45, .05);
+  head.add(mesh(kugel(1.05), braun, [0, 0, 0], [1.1, .95, .97]));
+  [-1, 1].forEach(sd => head.add(mesh(kugel(.52), gesicht, [sd * .37, 0, .74], [1, 1.02, .38])));
+  head.add(mesh(kugel(.3), braun, [0, .38, .8], [.55, .5, .3]));
+  // Augen mit Lidern
+  const lider = [], pupillen = [], brauen = [];
+  [-1, 1].forEach(sd => {
+    const x = sd * .37;
+    head.add(mesh(kugel(.3, 48, 32), iris, [x, .02, .9], [1, 1, .55]));
+    pupillen.push(put(head, mesh(kugel(.15, 32, 24), pupilleM, [x, .02, 1.04], [1, 1, .4])));
+    head.add(mesh(kugel(.05, 16, 12), glanz, [x + .08, .1, 1.1]));
+    const lid = put(head, mesh(new THREE.SphereGeometry(.315, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), braun, [x, .02, .9], [1, 1, .6]));
+    lid.rotation.x = -1.75; lider.push(lid);
+    const br = put(head, mesh(kugel(.2, 24, 16), fluegel, [x * 1.05, .4, .86], [1.3, .28, .35])); br.rotation.z = -sd * .22; brauen.push(br);
+  });
+  // Schnabel
+  const oben = put(head, mesh(new THREE.ConeGeometry(.19, .46, 32), schnabelM, [0, -.2, 1.02])); oben.rotation.x = Math.PI * .58;
+  const unten = put(head, mesh(new THREE.ConeGeometry(.1, .16, 32), schnabelM, [0, -.3, .93])); unten.rotation.x = Math.PI * .56;
+  // Federohren
+  [-1, 1].forEach(sd => { const o = put(head, mesh(new THREE.ConeGeometry(.2, .55, 32), fluegel, [sd * .68, .8, .05])); o.rotation.z = -sd * .4; });
+  // Flügel: eine durchgehende Flügelfläche, die an der Schulter am Körper ansetzt.
+  // Unterer Rand gezackt (Federspitzen), Muster: oben Deckfedern, unten gestreifte Schwungfedern.
+  const fluegelTextur = (() => {
+    // Leinwand oben = Flügelansatz (Schulter), unten = Federspitzen
+    const c = document.createElement("canvas"); c.width = 256; c.height = 512; const g = c.getContext("2d");
+    const grad = g.createLinearGradient(0, 0, 0, 512); grad.addColorStop(0, "#7a4728"); grad.addColorStop(1, "#5a331b");
+    g.fillStyle = grad; g.fillRect(0, 0, 256, 512);
+    for (let row = 0; row < 13; row++) for (let col = -1; col < 10; col++){      // Deckfedern (Schuppen) oben
+      const x = col * 28 + (row % 2) * 14, y = row * 15;
+      g.beginPath(); g.arc(x, y, 15, .2, Math.PI - .2); g.strokeStyle = "#3b2010"; g.globalAlpha = .4; g.lineWidth = 2.5; g.stroke();
+    }
+    for (let k = 0; k < 8; k++){                                                // lange Schwungfedern unten
+      const x0 = 16 + k * 32;
+      g.globalAlpha = .55; g.strokeStyle = "#2e180a"; g.lineWidth = 2.5;
+      g.beginPath(); g.moveTo(x0, 200); g.quadraticCurveTo(x0 + 6, 360, x0 + 2, 512); g.stroke();        // Federkiel
+      g.globalAlpha = .35; g.strokeStyle = "#e0bd92"; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(x0 + 14, 210); g.quadraticCurveTo(x0 + 20, 360, x0 + 16, 512); g.stroke(); // Federkante
+      for (let b = 0; b < 4; b++){ g.globalAlpha = .18; g.fillStyle = "#24120a"; g.fillRect(x0 - 12, 250 + b * 60, 28, 16); }
+    }
+    g.globalAlpha = .9; g.fillStyle = "#d9b98f"; g.fillRect(0, 488, 256, 24);     // helle Spitzen
+    g.globalAlpha = 1;
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    t.repeat.set(1 / 1.15, 1 / 1.9); t.offset.set(.55 / 1.15, 1); return t;
+  })();
+  const fluegelMat = PM({ map: fluegelTextur, bumpMap: fluegelTextur, bumpScale: 1.2, roughness: .75, sheen: .5, sheenColor: new THREE.Color(0xffcf9e), side: THREE.DoubleSide });
+  const fluegelGeo = (() => {
+    const sh = new THREE.Shape(), tip = [.28, -1.8], end = [-.5, -.55];
+    sh.moveTo(0, 0);
+    sh.bezierCurveTo(.38, -.2, .52, -.95, tip[0], tip[1]);                         // Vorderkante
+    const n = 6, dx = end[0] - tip[0], dy = end[1] - tip[1], L = Math.hypot(dx, dy), ox = -dy / L, oy = dx / L;
+    for (let i = 1; i <= n; i++){                                                  // gezackter Federrand
+      const ax = tip[0] + dx * (i - 1) / n, ay = tip[1] + dy * (i - 1) / n, bx = tip[0] + dx * i / n, by = tip[1] + dy * i / n;
+      sh.quadraticCurveTo((ax + bx) / 2 + ox * .2, (ay + by) / 2 + oy * .2, bx, by);
+    }
+    sh.bezierCurveTo(-.55, -.35, -.3, -.04, 0, 0);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: .05, bevelEnabled: true, bevelThickness: .035, bevelSize: .035, bevelSegments: 3, curveSegments: 28 });
+    const pos = geo.attributes.position;                                           // leicht um den Körper biegen
+    for (let i = 0; i < pos.count; i++) pos.setZ(i, pos.getZ(i) - .32 * pos.getX(i) * pos.getX(i));
+    geo.computeVertexNormals(); return geo;
+  })();
+  const fluegelGruppe = sd => {
+    const g = new THREE.Group(); g.position.set(sd * .96, 2.1, .25); body.add(g);
+    const m = new THREE.Mesh(fluegelGeo, fluegelMat); m.scale.x = sd; m.castShadow = true; g.add(m);
+    return { g, m, sd };
+  };
+  const fl = fluegelGruppe(-1), fr = fluegelGruppe(1);
+  const fluegelPose = (w, t, raise, spread, schwing) => {
+    const offen = Math.min(1, raise / 1.2);
+    w.g.rotation.z = w.sd * (.04 + raise + schwing);
+    w.g.rotation.y = -w.sd * (.72 - .55 * offen);
+    w.g.rotation.x = -.05 - offen * .1;
+    w.m.scale.set(w.sd * (1 + .22 * spread), 1 + .08 * spread, 1);
+  };
+  // Füße
+  [-.42, .42].forEach(x => [-.12, 0, .12].forEach(d => { const z = mesh(new THREE.CapsuleGeometry(.065, .16, 8, 16), fussM, [x + d, .07, .62]); z.rotation.x = Math.PI / 2; z.rotation.y = d * 2; root.add(z); }));
+  // Doktorhut
+  const hut = new THREE.Group(); hut.position.set(0, .95, -.05); hut.rotation.z = -.1; head.add(hut);
+  hut.add(mesh(new THREE.CylinderGeometry(.48, .55, .32, 48), hutM));
+  put(hut, mesh(new THREE.BoxGeometry(1.4, .07, 1.4), hutM, [0, .19, 0])).rotation.y = Math.PI / 4;
+  hut.add(mesh(kugel(.06, 16, 12), quaste, [0, .24, 0]));
+  const q = put(hut, mesh(new THREE.CylinderGeometry(.025, .025, .55, 12), quaste, [.6, -.06, .2]));
+  hut.add(mesh(new THREE.ConeGeometry(.07, .18, 16), quaste, [.6, -.38, .2]));
+  root.traverse(o => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+  return { root, update(t, s = {}){
+    root.scale.setScalar(Math.max(backOut(s.intro ?? 1), .001));
+    body.position.y = Math.sin(t * 1.9) * .035 + (s.hop ?? 0) * Math.abs(Math.sin(t * 6)) * .3;
+    body.scale.set(1 + Math.sin(t * 1.9) * .008, 1 - Math.sin(t * 1.9) * .008, 1);
+    head.rotation.y = (s.look ?? 0) * .4 + Math.sin(t * .8) * .08; head.rotation.z = Math.sin(t * 1.3) * .05;
+    const zu = ((t + .4) % 3.6) < .16 ? 1 : 0;
+    lider.forEach(l => l.rotation.x = zu ? 1.45 : -1.75);
+    const talk = (s.talk ?? 0) * mouthOpen(t);
+    unten.rotation.x = Math.PI * (.56 + talk * .08); unten.position.y = -.3 - talk * .1;
+    brauen.forEach(b => b.position.y = .4 + (s.talk ?? 0) * .05 * Math.abs(Math.sin(t * 2.4)));
+    const w = s.wave ?? 0, pt = s.point ?? 0, rede = (s.talk ?? 0) * Math.abs(Math.sin(t * 2.2));
+    fluegelPose(fr, t, w * 1.9 + pt * 1.35, Math.max(w, pt), w * Math.sin(t * 8) * .35 + pt * Math.sin(t * 2) * .05);
+    fluegelPose(fl, t, rede * .25 + (s.pointL ?? 0) * 1.35, rede * .4 + (s.pointL ?? 0), 0);
+    q.rotation.z = Math.sin(t * 2.6) * .25;
+  }};
+}
+
 // ---------- Bühne ----------
-export function buehne(canvas, W = 1920, H = 1080){
+export function buehne(canvas, W = 1920, H = 1080, opt = {}){
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
   renderer.setSize(W, H, false); renderer.setPixelRatio(1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  if (opt.weich){ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, W / H, .1, 100);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8a93b8, 1.7));
-  const key = new THREE.DirectionalLight(0xfff3e0, 2.1); key.position.set(-4, 7, 6); scene.add(key);
+  const key = new THREE.DirectionalLight(0xfff3e0, opt.weich ? 2.6 : 2.1); key.position.set(-4, 7, 6); scene.add(key);
+  if (opt.weich){
+    key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.radius = 6; key.shadow.bias = -.0005;
+    Object.assign(key.shadow.camera, { left: -6, right: 6, top: 6, bottom: -2, near: 1, far: 30 });
+    const boden = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: .18 }));
+    boden.rotation.x = -Math.PI / 2; boden.receiveShadow = true; scene.add(boden);
+    const warm = new THREE.DirectionalLight(0xffb070, 1.2); warm.position.set(3, 4, -6); scene.add(warm);
+  }
   const fill = new THREE.DirectionalLight(0xffffff, .9); fill.position.set(0, 2, 10); scene.add(fill);
   const rim = new THREE.DirectionalLight(0xbfd4ff, .9); rim.position.set(5, 3, -4); scene.add(rim);
   const schatten = (x, r = 1.1) => {

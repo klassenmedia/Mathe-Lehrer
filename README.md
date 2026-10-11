@@ -36,7 +36,15 @@ Die Stimme (Piper „Thorsten“, offline) wird beim ersten Lauf heruntergeladen
 - Oder alles auf einmal: auf GitHub „Code“ → „Download ZIP“ (bei ausgewähltem Branch).
 - Oder per Git: `git clone -b claude/mathe-lernspiel-grundschule-wwonn7 https://github.com/klassenmedia/mathe-lehrer.git`
 
-## 3D-Figuren
+## 3D-Figuren (aktueller Stand: nur Oskar, die Eule)
+**Neueste Version:** `eule()` in `videos/assets/figuren.js` – glatte, runde Eule mit Federmuster, Bernstein-Augen mit Lidern (blinzeln), einem Schnabel (Unterteil bewegt sich nur beim Sprechen), Doktorhut und Flügeln aus einem Stück, die an der Schulter ansetzen und beim Zeigen/Winken aufklappen.
+- Posen über `update(t, {talk, wave, point, pointL, hop, look, intro})`.
+- Vorschau ohne Video: `cd videos/assets && python3 -m http.server 8765`, dann `http://localhost:8765/eule-vorschau.html#point:1` (oder `#rest:1`, `#wave:1`).
+- Bühne mit weichen Schatten: `buehne(canvas, 1920, 1080, { weich: true })`.
+- Video-Drehbuch mit der Eule: `videos/skripte_figuren.py` (Video `0-oskar-stellt-sich-vor`) – **noch nicht mit den neuen Flügeln gerendert**: `cd videos && python3 render.py 0-oskar-stellt-sich-vor`.
+- Offen: Flügel noch feiner (Form/Muster), Oskar in die Erklärvideos einbauen (z. B. am Rand, zeigt auf die Rechnung), bessere Stimme.
+
+### Ältere Low-Poly-Figuren
 `videos/assets/figuren.js` baut drei eigene Low-Poly-Figuren mit Three.js: **Oskar** (Eule, Erklärer), **Robbi** (Rechenroboter), **Zacki** (Zahlen-Dino). Sie können sprechen (Mund synchron zur Stimme), blinzeln, winken, hüpfen und schauen. Jede Figur hat eine eigene Stimme (Tonhöhe). Ein Video mit Figuren bekommt im Drehbuch ein `three`-Skript und Sätze als `("oskar", "Text")` – Beispiel: `videos/skripte_figuren.py` (Video 00).
 
 ## Videos auf den eigenen Rechner holen
