@@ -879,7 +879,7 @@ function wgrid(al, {carries=null, tops=null, out=null, hl=-1}={}){
 
 STATIONS.uebertrag = {
   group:"profi", sym:"+¹", name:"Übertrag", desc:"Plus und Minus mit 2, 3 oder 4 Stellen. Untereinander schreiben, rechts anfangen.",
-  video:"videos/11-plus-mit-uebertrag.mp4", video2:"videos/12-minus-mit-uebertrag.mp4",
+  video:"videos/11-plus-mit-uebertrag.mp4", video2:"videos/12-minus-mit-uebertrag.mp4", video3:"videos/13-nebeneinander-rechnen.mp4",
   options: {label:"Wie viele Stellen?", values:[2,3,4], def:[2,3]},
   make(sel){
     const L = pick(sel.length ? sel : [2,3]), lo = 10 ** (L - 1), hi = 10 ** L - 1, op = Math.random() < .5 ? "+" : "−";
@@ -1029,6 +1029,7 @@ function stationStart(id){
   kids.push(h("div",{class:"row"},
     h("button",{class:"btn warm", onclick:() => openVideo(s)}, s.video2 ? "▶ Video: Plus" : "▶ Erklärvideo"),
     s.video2 ? h("button",{class:"btn warm", onclick:() => openVideo({...s, video:s.video2})}, "▶ Video: Minus") : null,
+    s.video3 ? h("button",{class:"btn warm", onclick:() => openVideo({...s, video:s.video3})}, "▶ Video: Ohne Platz") : null,
     h("button",{class:"btn alt", onclick:() => openSteps(s, s.example, null, true)}, "Schritt für Schritt"),
     go));
   app.replaceChildren(h("div",{class:"panel stack"}, kids));

@@ -12,8 +12,9 @@ import engine
 from skripte import VIDEOS as BASIS
 from skripte_profi import VIDEOS as PROFI
 from skripte_uebertrag import VIDEOS as UEBERTRAG
+from skripte_nebeneinander import VIDEOS as NEBEN
 
-VIDEOS = BASIS + PROFI + UEBERTRAG
+VIDEOS = BASIS + PROFI + UEBERTRAG + NEBEN
 
 HERE = Path(__file__).parent
 VOICE_DIR = HERE / ".voices"

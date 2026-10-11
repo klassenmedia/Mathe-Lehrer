@@ -183,6 +183,18 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#f6f8fc}
 .wr > div{isolation:isolate}
 .wr > div > span{display:block}
 .hz-row{display:flex; gap:24px; font:800 96px "Grandstander",sans-serif}
+
+/* Brücken-Trick und leerer Zahlenstrahl */
+.zrow{position:relative; padding-top:260px; display:flex; flex:none}
+.zrow svg{position:absolute; left:0; top:0; overflow:visible}
+.zc{position:relative; height:130px; font:800 110px/130px "Grandstander",sans-serif; text-align:center; flex:none}
+.zc.box{border:6px solid var(--ink); border-radius:18px; height:124px; margin:3px 10px 0; background:var(--card); box-shadow:0 8px 0 var(--line-lo)}
+.zc.box span{display:block; color:var(--good)}
+.zc .sub{position:absolute; top:100%; left:0; right:0; font:800 56px/1.1 "Grandstander",sans-serif; color:var(--bad)}
+.zc .x{position:absolute; left:16px; right:16px; top:50%; height:9px; margin-top:-4px; background:var(--bad); border-radius:4px; transform-origin:left center}
+.cy{position:absolute; width:60px; margin-left:-30px; text-align:center; font:800 60px/1 "Grandstander",sans-serif; color:var(--bad)}
+.zs text{font-family:"Grandstander",sans-serif; font-weight:800}
+.zs .num{font-size:52px; fill:var(--ink)} .zs .jl{font-size:50px}
 </style>
 </head>
 <body>
@@ -231,6 +243,50 @@ function put(cellEl, txt, cls){ const s = E("span", cls || "", txt); cellEl.appe
 function markAt(cellEl, at, hold=3){ const m = E("span", "hl"); cellEl.prepend(m); tl.fromTo(m, {opacity:0}, {opacity:1, duration:.3}, at); tl.to(m, {opacity:0, duration:.4}, at + hold); return m; }
 function plus_step(R, i, at, digit, carryTo, carryAt){ markAt(R.res[i], at, carryAt ? carryAt - at + 1 : 3); pop(put(R.res[i], digit, "g"), at + 1.6); if (carryTo != null) pop(put(R.cr[carryTo], "1"), carryAt); }
 function strikeCell(cellEl, at){ const x = E("span", "x"); cellEl.append(x); tl.fromTo(x, {scaleX:0, rotation:-20}, {scaleX:1, rotation:-20, duration:.4, ease:"power2.out"}, at); return x; }
+// ---- Brücken-Trick: Aufgabe als Zeile fester Zellen (cw px breit)
+const SVGNS = "http://www.w3.org/2000/svg";
+function zeile(host, chars, cw){
+  host.classList.add("zrow");
+  const svg = document.createElementNS(SVGNS, "svg"); svg.setAttribute("width", chars.length * cw); svg.setAttribute("height", 260); host.append(svg);
+  const cells = chars.map(c => { const d = E("div", "zc" + (c === "#" ? " box" : ""), c === "#" ? "" : c); d.style.width = (c === "#" ? cw - 20 : cw) + "px"; host.append(d); return d; });
+  return {svg, cells, cx: i => i * cw + cw / 2};
+}
+function bogen(svg, x1, x2, h, color, at, yBase=250){
+  const p = document.createElementNS(SVGNS, "path");
+  p.setAttribute("d", `M ${x1} ${yBase} Q ${(x1 + x2) / 2} ${yBase - 2 * h} ${x2} ${yBase}`);
+  p.setAttribute("fill", "none"); p.setAttribute("stroke", color); p.setAttribute("stroke-width", "9"); p.setAttribute("stroke-linecap", "round");
+  svg.append(p);
+  const L = p.getTotalLength(); p.setAttribute("stroke-dasharray", L);
+  tl.fromTo(p, {attr:{"stroke-dashoffset": L}}, {attr:{"stroke-dashoffset": 0}, duration:.9, ease:"power2.inOut"}, at);
+  return {p, apex:[(x1 + x2) / 2, yBase - h]};
+}
+function aufBogen(host, b, txt, at){ const d = E("div", "cy", txt); d.style.left = b.apex[0] + "px"; d.style.top = (b.apex[1] - 70) + "px"; host.append(d); pop(d, at); return d; }
+function inBox(cell, txt, at){ const s = E("span", "", txt); cell.append(s); pop(s, at); return s; }
+function unterZelle(cell, txt, at){ const s = E("div", "sub", txt); cell.append(s); pop(s, at); return s; }
+function streiche(cell, at){ const x = E("span", "x"); cell.append(x); tl.fromTo(x, {scaleX:0, rotation:-20}, {scaleX:1, rotation:-20, duration:.4}, at); }
+// ---- leerer Zahlenstrahl mit Sprüngen. pts: [[wert, x], ...]
+function strahl(host, W, pts){
+  const svg = document.createElementNS(SVGNS, "svg"); svg.setAttribute("width", W); svg.setAttribute("height", 420); svg.classList.add("zs"); host.append(svg);
+  const line = document.createElementNS(SVGNS, "line");
+  Object.entries({x1:20, x2:W - 20, y1:300, y2:300, stroke:"#1c2f5e", "stroke-width":8, "stroke-linecap":"round"}).forEach(([k, v]) => line.setAttribute(k, v));
+  svg.append(line);
+  const mk = pts.map(([v, x]) => {
+    const g = document.createElementNS(SVGNS, "g");
+    const tk = document.createElementNS(SVGNS, "line");
+    Object.entries({x1:x, x2:x, y1:280, y2:320, stroke:"#1c2f5e", "stroke-width":7}).forEach(([k, val]) => tk.setAttribute(k, val));
+    const tx = document.createElementNS(SVGNS, "text"); tx.setAttribute("x", x); tx.setAttribute("y", 385); tx.setAttribute("text-anchor", "middle"); tx.setAttribute("class", "num"); tx.textContent = v;
+    g.append(tk, tx); svg.append(g); return {g, x};
+  });
+  return {svg, mk};
+}
+function sprung(Z, i, j, label, color, at, h=150){
+  const x1 = Z.mk[i].x, x2 = Z.mk[j].x;
+  const b = bogen(Z.svg, x1, x2, h, color, at, 290);
+  const tx = document.createElementNS(SVGNS, "text"); tx.setAttribute("x", (x1 + x2) / 2); tx.setAttribute("y", 290 - h - 22);
+  tx.setAttribute("text-anchor", "middle"); tx.setAttribute("class", "jl"); tx.setAttribute("fill", color); tx.textContent = label; Z.svg.append(tx);
+  tl.fromTo(tx, {opacity:0}, {opacity:1, duration:.3}, at + .5);
+  tl.fromTo(Z.mk[j].g, {opacity:0}, {opacity:1, duration:.3}, at + .8);
+}
 // Punktefeld: liefert Reihen [{row, dots, lab}]
 function field(host, rows, cols, size, color, labels){
   host.classList.add("field"); host.style.setProperty("--s", size + "px");

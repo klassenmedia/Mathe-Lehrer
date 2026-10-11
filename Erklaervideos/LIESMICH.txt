@@ -12,5 +12,6 @@ Zahlenwerkstatt – Erklärvideos (Full HD, volle Qualität)
 10 Rechentricks und Muster  – Tauschaufgabe, Zahlenhaus, Nachbaraufgabe, Halbieren/Verdoppeln
 11 Plus mit Uebertrag       – nebeneinander → untereinander, 10 Würfel werden 1 Stange, 2–4 Stellen
 12 Minus mit Uebertrag      – Zehner aufmachen und tauschen, auch über eine 0 hinweg
+13 Nebeneinander rechnen    – kein Platz? Brücken-Trick, Zehner voll machen, Auffüllen
 
 Kleinere Kopien für das Spiel liegen in videos/.
