@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<script src="gsap.min.js"></script>
+<style>
+@font-face{font-family:"Andika";font-weight:400;src:url("andika-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Andika";font-weight:700;src:url("andika-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Grandstander";font-weight:800;src:url("grandstander-latin-800-normal.woff2") format("woff2")}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#f6f8fc}
+#root{
+  --paper:#f6f8fc; --grid:#dfe7f3; --ink:#1c2f5e; --soft:#56658a; --card:#ffffff; --line:#c8d3e6;
+  --blue:#2f6fde; --blue-bg:#e4edfd; --orange:#d96a12; --orange-bg:#fdeedd;
+  --marker:#ffe36e; --good:#1f8a4f; --good-bg:#e1f4e8; --bad:#cf3434; --bad-bg:#fde6e6;
+  position:relative; width:100%; height:100%; overflow:hidden; background:var(--paper);
+  color:var(--ink); font-family:"Andika",sans-serif;
+}
+#bg{position:absolute; inset:0;
+  background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);
+  background-size:48px 48px}
+#margin{position:absolute; top:0; bottom:0; left:96px; width:3px; background:#f2b8b8}
+#brand{position:absolute; left:140px; top:34px; font:800 44px "Grandstander",sans-serif; display:flex; gap:0}
+#brand span{background:linear-gradient(transparent 58%,var(--marker) 58%)}
+#topic{position:absolute; right:70px; top:38px; font:700 30px "Andika",sans-serif; background:var(--card);
+  border:3px solid var(--line); border-radius:999px; padding:6px 26px}
+
+.scene{position:absolute; inset:0}
+.inner{position:absolute; left:140px; right:80px; top:130px; height:760px; display:flex; align-items:center; justify-content:center; gap:90px}
+.col{display:flex; flex-direction:column; align-items:center; gap:28px}
+.colL{display:flex; flex-direction:column; align-items:flex-start; gap:26px}
+
+.cap{position:absolute; left:0; right:0; bottom:36px; height:150px; display:flex; align-items:center; justify-content:center}
+.captext{max-width:1640px; background:var(--card); border:3px solid var(--line); border-radius:28px; padding:16px 44px;
+  font:700 46px/1.25 "Andika",sans-serif; text-align:center; color:var(--ink)}
+
+/* Typo */
+.h{font:800 84px/1.1 "Grandstander",sans-serif; text-align:center}
+.eq{font:800 104px/1.15 "Grandstander",sans-serif; display:flex; gap:28px; align-items:center; white-space:nowrap}
+.eq.m{font-size:76px; gap:20px}
+.eq.s{font-size:60px; gap:16px}
+.tok{display:inline-block; position:relative; isolation:isolate}
+.b{color:var(--blue)} .o{color:var(--orange)} .g{color:var(--good)} .r{color:var(--bad)}
+.mk{position:absolute; left:-10px; right:-10px; top:18%; bottom:8%; background:var(--marker); border-radius:10px; z-index:-1; transform-origin:left center}
+.strike{position:absolute; left:-12px; right:-12px; top:50%; height:10px; margin-top:-5px; background:var(--bad); border-radius:5px; transform-origin:left center}
+.box{display:inline-block; width:1.05em; height:1.05em; border:8px solid var(--ink); border-radius:12px; vertical-align:middle}
+
+/* Karten */
+.card{background:var(--card); border:4px solid var(--line); border-radius:28px; padding:28px 40px; display:flex; flex-direction:column; align-items:center; gap:10px}
+.card .eq{font-size:70px}
+.card .sub{font:700 34px "Andika",sans-serif; color:var(--soft)}
+.rule{background:var(--card); border:4px solid var(--line); border-left:22px solid var(--marker); border-radius:20px; padding:30px 44px;
+  font:700 50px/1.3 "Andika",sans-serif; max-width:1350px}
+.rule .k{font:800 40px "Grandstander",sans-serif; color:var(--orange); display:block; margin-bottom:8px}
+.check{width:150px; height:150px; border-radius:50%; background:var(--good); color:#fff; font:800 100px/150px "Grandstander",sans-serif; text-align:center}
+
+/* Titel */
+.title{display:flex; flex-direction:column; align-items:center; gap:24px}
+.title .sym{width:220px; height:220px; border-radius:48px; background:var(--blue-bg); color:var(--blue); font:800 150px/220px "Grandstander",sans-serif; text-align:center}
+.title h1{font:800 120px/1.05 "Grandstander",sans-serif; text-align:center}
+.title p{font:700 52px "Andika",sans-serif; color:var(--soft)}
+
+/* Punktefeld */
+.field{display:flex; flex-direction:column; gap:12px; position:relative}
+.frow{display:flex; gap:12px; position:relative; align-items:center}
+.frow.g5{margin-top:14px}
+.dot{width:var(--s,40px); height:var(--s,40px); border-radius:50%; background:var(--blue); flex:none}
+.dot.o{background:var(--orange)}
+.dot.c5{margin-left:16px}
+.flab{font:800 40px "Grandstander",sans-serif; color:var(--soft); margin-left:22px; width:110px}
+.fstrike{position:absolute; left:-16px; right:-16px; top:50%; height:8px; margin-top:-4px; background:var(--bad); border-radius:4px; transform-origin:left center}
+
+/* Kekse */
+.cstage{position:relative; width:1700px; height:740px; flex:none}
+.cookie{position:absolute; width:56px; height:56px; border-radius:50%; background:var(--orange);
+  box-shadow:inset 0 -6px 0 rgba(0,0,0,.12)}
+.plate{position:absolute; width:240px; height:240px; border-radius:50%; background:var(--card); border:6px solid var(--line)}
+.restbox{position:absolute; width:250px; height:200px; border:6px dashed var(--bad); border-radius:26px}
+.restlab{position:absolute; font:800 40px "Grandstander",sans-serif; color:var(--bad); width:250px; text-align:center}
+.plab{position:absolute; width:240px; text-align:center; font:800 44px "Grandstander",sans-serif; color:var(--soft)}
+.ceq{position:absolute; left:0; right:0; top:610px; display:flex; justify-content:center}
+
+/* Reihe */
+.series{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; max-width:1600px}
+.chip{display:block; position:relative; font:800 42px "Grandstander",sans-serif; background:var(--card); border:4px solid var(--line); border-radius:22px; padding:8px 24px}
+.chip.hit{background:var(--good-bg); border-color:var(--good); color:var(--good)}
+.chip.over{background:var(--bad-bg); border-color:var(--bad); color:var(--bad)}
+
+/* Zehner/Einer */
+.b10{display:flex; gap:18px; align-items:flex-end; height:360px}
+.bar{width:48px; height:340px; border-radius:6px; background:var(--blue); flex:none;
+  background-image:linear-gradient(rgba(255,255,255,.55) 3px,transparent 3px); background-size:100% 34px}
+.cubes{display:grid; grid-template-columns:repeat(2,48px); gap:8px; margin-left:20px}
+.cube{width:48px; height:48px; border-radius:6px; background:var(--orange)}
+.split{display:flex; flex-direction:column; align-items:center; gap:20px}
+.split .parts{display:flex; gap:160px}
+.pbox{font:800 96px "Grandstander",sans-serif; background:var(--card); border:5px solid var(--line); border-radius:26px; padding:6px 40px}
+.pbox.bl{border-color:var(--blue); color:var(--blue)} .pbox.or{border-color:var(--orange); color:var(--orange)}
+.arrows{font:800 80px "Grandstander",sans-serif; color:var(--soft); display:flex; gap:200px}
+
+/* Begriffe */
+.lab{display:block; font:700 38px "Andika",sans-serif; color:var(--orange); text-align:center; margin-top:6px}
+.cell{display:flex; flex-direction:column; align-items:center}
+.pv{display:flex; gap:90px}
+.pv .card{min-width:520px}
+.big{font:800 170px/1 "Grandstander",sans-serif}
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="%%TOTAL%%" data-width="1920" data-height="1080">
+  <div id="bg"></div>
+  <div id="margin"></div>
+  <div id="brand">Zahlen<span>werkstatt</span></div>
+  <div id="topic">%%TOPIC%%</div>
+  <audio id="voice" src="voice.wav" data-start="0" data-duration="%%TOTAL%%"></audio>
+%%SCENES%%
+%%CAPTIONS%%
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+const E = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+function sceneFade(S, T0, T1){
+  const inner = S.querySelector(".inner");
+  tl.fromTo(inner, {opacity:0}, {opacity:1, duration:.35, ease:"power1.out"}, T0);
+  tl.to(inner, {opacity:0, duration:.3, ease:"power1.in"}, T1 - .3);
+}
+function pop(els, at, stagger=0){ tl.fromTo(els, {scale:0, opacity:0}, {scale:1, opacity:1, duration:.45, ease:"back.out(2)", stagger}, at); }
+function rise(els, at, stagger=0){ tl.fromTo(els, {opacity:0, y:40}, {opacity:1, y:0, duration:.5, ease:"power2.out", stagger}, at); }
+function draw(els, at){ tl.fromTo(els, {scaleX:0}, {scaleX:1, duration:.45, ease:"power2.out"}, at); }
+function fadeTo(els, at, o=.25){ tl.to(els, {opacity:o, duration:.4}, at); }
+// Punktefeld: liefert Reihen [{row, dots, lab}]
+function field(host, rows, cols, size, color, labels){
+  host.classList.add("field"); host.style.setProperty("--s", size + "px");
+  const R = [];
+  for (let r = 0; r < rows; r++){
+    const row = E("div", "frow" + (r === 5 ? " g5" : ""));
+    const dots = [];
+    for (let c = 0; c < cols; c++){
+      const d = E("div", "dot " + (color ? color(r, c) : "") + (c === 5 ? " c5" : ""));
+      row.append(d); dots.push(d);
+    }
+    let lab = null;
+    if (labels){ lab = E("div", "flab", labels(r)); row.append(lab); }
+    host.append(row); R.push({row, dots, lab});
+  }
+  return R;
+}
+// Kekse: n Kekse, d Teller. init(i, api) -> [x,y] Startposition (Mittelpunkt)
+function cookies(host, n, d, init){
+  const P = i => [200 + i * 300, 380];
+  const restC = [1470, 380];
+  const api = {
+    pile: i => { const cols = Math.min(n, 7); const x0 = 850 - (cols - 1) * 40; return [x0 + (i % cols) * 80, 50 + Math.floor(i / cols) * 80]; },
+    plate: (p, k) => { const o = [[-40,-40],[40,-40],[-40,40],[40,40]][k]; const c = P(p); return [c[0] + o[0], c[1] + o[1]]; },
+    rest: k => [restC[0] - 75 + (k % 3) * 75, restC[1] - 40 + Math.floor(k / 3) * 80],
+  };
+  const plates = [], ck = [], pos = [];
+  for (let p = 0; p < d; p++){
+    const e = E("div", "plate"); const c = P(p);
+    e.style.left = (c[0] - 120) + "px"; e.style.top = (c[1] - 120) + "px"; host.append(e); plates.push(e);
+  }
+  const rb = E("div", "restbox"); rb.style.left = (restC[0] - 125) + "px"; rb.style.top = (restC[1] - 100) + "px"; host.append(rb);
+  const rl = E("div", "restlab", "Rest"); rl.style.left = (restC[0] - 125) + "px"; rl.style.top = (restC[1] - 160) + "px"; host.append(rl);
+  for (let i = 0; i < n; i++){
+    const p = init(i, api); pos.push(p);
+    const c = E("div", "cookie"); c.style.left = (p[0] - 28) + "px"; c.style.top = (p[1] - 28) + "px"; host.append(c); ck.push(c);
+  }
+  api.plates = plates; api.ck = ck; api.restbox = [rb, rl];
+  api.move = (i, to, at, dur=.55) => tl.to(ck[i], {x: to[0] - pos[i][0], y: to[1] - pos[i][1], duration: dur, ease: "power2.inOut"}, at);
+  api.plabel = (p, txt) => { const e = E("div", "plab", txt); const c = P(p); e.style.left = (c[0] - 120) + "px"; e.style.top = (c[1] + 130) + "px"; host.append(e); return e; };
+  return api;
+}
+%%SCENE_JS%%
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

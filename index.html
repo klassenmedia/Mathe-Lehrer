@@ -115,6 +115,7 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--blue); outline-
 .sheet .text{font-size:20px; max-width:62ch}
 .sheet .text b{color:var(--blue)}
 .visual{display:flex; flex-direction:column; align-items:center; gap:10px; min-height:40px; overflow-x:auto; padding-block:6px}
+.vid{width:100%; aspect-ratio:16/9; max-width:100%; border-radius:12px; background:#000}
 .mk{background:var(--marker); border-radius:6px; padding:0 4px}
 .b{color:var(--blue); font-weight:700} .o{color:var(--orange); font-weight:700} .g{color:var(--good); font-weight:700} .r{color:var(--bad); font-weight:700}
 
@@ -261,7 +262,7 @@ const STATIONS = {
 
   /* ===== Malreihen ===== */
   mal: {
-    sym: "·", name: "Malreihen", desc: "3er, 6er und alle anderen Reihen. Mit Punktefeld und Rechentricks.",
+    sym: "·", name: "Malreihen", video: "videos/1-malreihen.mp4", desc: "3er, 6er und alle anderen Reihen. Mit Punktefeld und Rechentricks.",
     options: {label:"Welche Reihen üben?", values:[2,3,4,5,6,7,8,9,10], def:[3,6]},
     make(sel){
       const b = pick(sel.length ? sel : [3,6]);
@@ -333,7 +334,7 @@ const STATIONS = {
 
   /* ===== Teilen mit Rest ===== */
   teilen: {
-    sym: ":", name: "Teilen mit Rest", desc: "Kekse gerecht verteilen. Was übrig bleibt, ist der Rest.",
+    sym: ":", name: "Teilen mit Rest", video: "videos/2-teilen-mit-rest.mp4", desc: "Kekse gerecht verteilen. Was übrig bleibt, ist der Rest.",
     options: {label:"Durch welche Zahlen teilen?", values:[2,3,4,5,6,7,8,9], def:[3,4,5,6,8]},
     make(sel){
       const d = pick(sel.length ? sel : [3,4,5]);
@@ -370,7 +371,7 @@ const STATIONS = {
 
   /* ===== Minus mit Rechenweg ===== */
   minus: {
-    sym: "−", name: "Minus-Rechenwege", desc: "Erst die Zehner, dann die Einer. Mit Zehnerstangen.",
+    sym: "−", name: "Minus-Rechenwege", video: "videos/3-minus-rechenwege.mp4", desc: "Erst die Zehner, dann die Einer. Mit Zehnerstangen.",
     make(){
       const a = rnd(2, 10) * 10;
       let b;
@@ -407,7 +408,7 @@ const STATIONS = {
 
   /* ===== Punkt vor Strich ===== */
   punkt: {
-    sym: "·+", name: "Punkt vor Strich", desc: "Erst mal und geteilt, dann plus und minus. Schritt für Schritt.",
+    sym: "·+", name: "Punkt vor Strich", video: "videos/4-punkt-vor-strich.mp4", desc: "Erst mal und geteilt, dann plus und minus. Schritt für Schritt.",
     make(){
       const type = pick(["pp+","pp-","n-q","n+p"]);
       let terms;
@@ -455,7 +456,7 @@ const STATIONS = {
 
   /* ===== Fachwörter ===== */
   begriffe: {
-    sym: "Aa", name: "Fachwörter", desc: "Faktor, Produkt, Dividend, Divisor, Quotient. Was ist was?",
+    sym: "Aa", name: "Fachwörter", video: "videos/5-fachwoerter.mp4", desc: "Faktor, Produkt, Dividend, Divisor, Quotient. Was ist was?",
     make(){
       const a = rnd(2,9), b = rnd(2,9), p = a*b;
       const type = pick(["prod","faktor","quot","dividend","divisor","multi"]);
@@ -592,7 +593,8 @@ function stationStart(id){
   }
   const go = h("button",{class:"btn", onclick:() => startRound(id, sel)}, "Los geht's: 10 Aufgaben");
   kids.push(h("div",{class:"row"},
-    h("button",{class:"btn warm", onclick:() => openSteps(s, s.example, null, true)}, "Erst erklären lassen"),
+    h("button",{class:"btn warm", onclick:() => openVideo(s)}, "▶ Erklärvideo"),
+    h("button",{class:"btn alt", onclick:() => openSteps(s, s.example, null, true)}, "Schritt für Schritt"),
     go));
   app.replaceChildren(h("div",{class:"panel stack"}, kids));
 }
@@ -690,6 +692,24 @@ function summary(){
       h("button",{class:"btn", onclick:() => startRound(state.id, state.sel)}, "Nochmal 10 Aufgaben"),
       h("button",{class:"btn alt", onclick:home}, "Andere Station"))
   ));
+}
+
+/* Erklärvideo */
+function openVideo(station){
+  const bg = h("div",{class:"sheet-bg", role:"dialog", "aria-modal":"true"});
+  const close = () => { bg.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = e => { if (e.key === "Escape") close(); };
+  const vid = h("video",{class:"vid", src:station.video, controls:"", playsinline:"", preload:"metadata"});
+  bg.append(h("div",{class:"sheet"},
+    h("div",{class:"row", style:"justify-content:space-between"},
+      h("div",{class:"stepno"}, "Erklärvideo: " + station.name),
+      h("button",{class:"back", onclick:close, "aria-label":"Schließen"}, "✕")),
+    vid,
+    h("div",{class:"actions"}, h("button",{class:"btn", onclick:close}, "Fertig geschaut"))));
+  bg.addEventListener("click", e => { if (e.target === bg) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.append(bg);
+  vid.play().catch(() => {});
 }
 
 /* Schritt-für-Schritt-Erklärung */
