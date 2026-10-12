@@ -29,7 +29,7 @@ export HYPERFRAMES_BROWSER_PATH=/pfad/zu/chrome   # optional, sonst lädt HyperF
 cd videos && python3 render.py            # alle Videos
 python3 render.py 2-teilen-mit-rest       # nur eins
 ```
-Die Stimme (Piper „Thorsten“, offline) wird beim ersten Lauf heruntergeladen. Gerendert wird mit [HyperFrames](https://hyperframes.heygen.com).
+Die Stimme (Piper „Thorsten high“, offline, CC0) wird beim ersten Lauf von huggingface.co heruntergeladen. Tempo: `TEMPO` in `render.py` (1,3 = ruhig für Kinder). Zahlen werden vor der Sprachausgabe als Wörter mit Bindestrichen ausgeschrieben (`engine.zahlwort`), weil Piper Ziffern abgehackt und zusammengeschriebene Zahlwörter falsch spricht. Hinweis: Die alte Stimme „thorsten low“ brauchte eine ç-Korrektur (c + Cedille → ç); bei „thorsten high“ verdirbt genau diese Korrektur den ch-Laut. Gerendert wird mit [HyperFrames](https://hyperframes.heygen.com).
 
 ## Videos auf den eigenen Rechner holen
 - Im Browser: GitHub → Repo `klassenmedia/mathe-lehrer` → Branch `claude/mathe-lernspiel-grundschule-wwonn7` → Ordner `Erklaervideos` → Video anklicken → Download-Knopf.
@@ -43,7 +43,7 @@ Die Stimme (Piper „Thorsten“, offline) wird beim ersten Lauf heruntergeladen
 - Bühne mit weichen Schatten: `buehne(canvas, 1920, 1080, { weich: true })`.
 - Video-Drehbuch mit der Eule: `videos/skripte_figuren.py` (Video `0-oskar-stellt-sich-vor`, gerendert: `Erklaervideos/00 Oskar stellt sich vor.mp4`, fürs Spiel `videos/0-oskar-stellt-sich-vor.mp4`). Neu: `cd videos && python3 render.py 0-oskar-stellt-sich-vor`.
 - **Oskar in allen Erklärvideos (01–13):** `videos/engine.py` gibt jedem Video ohne eigenes `three`-Skript automatisch Oskar rechts neben die Rechnung (`videos/oskar_rand.py`). Er spricht mit, zeigt bei jeder neuen Szene mit dem Flügel auf den Inhalt, schaut abwechselnd zur Rechnung und zu den Kindern, winkt am Anfang und hüpft am Ende. `template.html` (`platzFuerOskar`) verkleinert und verschiebt jede Szene einzeln so, dass ihr Inhalt links von Oskar bleibt (gemessen über die ganze Szene). Abschalten pro Video: `ohne_oskar=True` im Drehbuch. Test: `cd videos && python3 -m unittest test_engine`.
-- Offen: Flügel noch feiner (Form/Muster), bessere Stimme.
+- Offen: Flügel noch feiner (Form/Muster).
 
 ### Ältere Low-Poly-Figuren
 `videos/assets/figuren.js` baut drei eigene Low-Poly-Figuren mit Three.js: **Oskar** (Eule, Erklärer), **Robbi** (Rechenroboter), **Zacki** (Zahlen-Dino). Sie können sprechen (Mund synchron zur Stimme), blinzeln, winken, hüpfen und schauen. Jede Figur hat eine eigene Stimme (Tonhöhe). Ein Video mit Figuren bekommt im Drehbuch ein `three`-Skript und Sätze als `("oskar", "Text")` – Beispiel: `videos/skripte_figuren.py` (Video 00).

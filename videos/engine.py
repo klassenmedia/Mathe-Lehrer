@@ -26,6 +26,43 @@ REIHE = {2: "Zweier", 3: "Dreier", 4: "Vierer", 5: "Fünfer", 6: "Sechser", 7: "
          8: "Achter", 9: "Neuner", 10: "Zehner"}
 
 
+EINER = ["null", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun"]
+ZEHNER_BIS_19 = ["zehn", "elf", "zwölf", "dreizehn", "vierzehn", "fünfzehn", "sechzehn", "siebzehn", "achtzehn", "neunzehn"]
+ZEHNER = ["", "", "zwanzig", "dreißig", "vierzig", "fünfzig", "sechzig", "siebzig", "achtzig", "neunzig"]
+ZAHLWORT_GRENZE = 1_000_000
+
+
+def _unter_hundert(n):
+    if n < 10:
+        return EINER[n]
+    if n < 20:
+        return ZEHNER_BIS_19[n - 10]
+    einer, zehner = n % 10, n // 10
+    return ZEHNER[zehner] if einer == 0 else f"{'ein' if einer == 1 else EINER[einer]}-und-{ZEHNER[zehner]}"
+
+
+def _teile(*teile):
+    return "-".join(t for t in teile if t)
+
+
+def _unter_tausend(n):
+    hunderter, rest = divmod(n, 100)
+    vorne = "" if hunderter == 0 else _teile("" if hunderter == 1 else EINER[hunderter], "hundert")
+    return _teile(vorne, _unter_hundert(rest) if rest or not vorne else "")
+
+
+def zahlwort(n):
+    """Zahlwort mit Bindestrichen (158 -> hundert-acht-und-fünfzig). Piper liest Ziffern abgehackt und
+    zusammengeschriebene Zahlwörter falsch (vierundvierzig mit w, achthundert ohne h); so stimmen die Laute."""
+    if not 0 <= n < ZAHLWORT_GRENZE:
+        return str(n)
+    tausender, rest = divmod(n, 1000)
+    if tausender == 0:
+        return _unter_tausend(rest)
+    vorne = "" if tausender == 1 else re.sub(r"eins$", "ein", _unter_tausend(tausender))
+    return _teile(vorne, "tausend", _unter_tausend(rest) if rest else "")
+
+
 def sprich(text):
     """Untertitel-Text -> Text für die Sprachausgabe."""
     t = re.sub(r"\s+", " ", text.replace("☐", " Kästchen "))
@@ -34,6 +71,8 @@ def sprich(text):
     t = re.sub(r"\b(\d+)-mal\b", lambda m: ZAHLWORT.get(int(m.group(1)), m.group(1)) + "mal", t)
     t = re.sub(r"(\d|Kästchen) : (\d|Kästchen)", r"\1 geteilt durch \2", t)
     t = t.replace("·", " mal ").replace("−", " minus ").replace("+", " plus ").replace("=", " gleich ")
+    t = re.sub(r"(\d),(\d)", r"\1 Komma \2", t)
+    t = re.sub(r"\d{1,6}(?!\d)(?<!\d{7})", lambda m: zahlwort(int(m.group(0))), t)   # nur Zahlen bis 6 Stellen, längere bleiben Ziffern
     return re.sub(r"\s+", " ", t).strip()
 
 
