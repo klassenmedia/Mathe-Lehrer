@@ -200,7 +200,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:#f6f8fc}
 </style>
 </head>
 <body>
-<div id="root" data-composition-id="main" data-start="0" data-duration="%%TOTAL%%" data-width="1920" data-height="1080">
+<div id="root" class="%%ROOT_CLASS%%" data-composition-id="main" data-start="0" data-duration="%%TOTAL%%" data-width="1920" data-height="1080">
   <div id="bg"></div>
   <div id="margin"></div>
   %%THREE_CANVAS%%
@@ -333,6 +333,36 @@ function cookies(host, n, d, init){
   return api;
 }
 %%SCENE_JS%%
+// Oskar steht rechts: jede Szene wird so verkleinert und verschoben, dass ihr Inhalt links von ihm Platz hat.
+// Gemessen wird nur, solange die Szene steht (nach dem Einblenden, vor dem Ausblenden), dort aber über die ganze Dauer,
+// weil Inhalte erst im Lauf der Animation erscheinen oder wandern. freiR passt zu Oskars Position in oskar_rand.py.
+const EINBLENDEN = .65, AUSBLENDEN = .4;
+function sichtbar(e, bis){
+  for (let x = e; x && x !== bis.parentElement; x = x.parentElement) if (+getComputedStyle(x).opacity <= .05) return false;
+  return true;
+}
+function platzFuerOskar(freiL = 150, freiR = 1440, proben = 8){
+  window.SCN.forEach(([a, b], i) => {
+    const S = document.getElementById("s" + i), inner = S.querySelector(".inner");
+    const von = a + EINBLENDEN, bis = Math.max(von, b - AUSBLENDEN);
+    S.style.display = "block"; S.style.visibility = "visible";
+    let L = Infinity, R = -Infinity;
+    for (let k = 0; k <= proben; k++){
+      tl.seek(von + (bis - von) * k / proben);
+      inner.querySelectorAll("*").forEach(e => {
+        const r = e.getBoundingClientRect();
+        if (r.width > 2 && r.height > 2 && sichtbar(e, inner)){ L = Math.min(L, r.left); R = Math.max(R, r.right); }
+      });
+    }
+    S.style.display = S.style.visibility = "";
+    if (R <= L) return;
+    const mass = Math.min(1, (freiR - freiL) / (R - L)), mitte = (L + R) / 2;
+    S.style.transformOrigin = `${mitte}px 50%`;
+    S.style.transform = `translateX(${(freiL + freiR) / 2 - mitte}px) scale(${mass})`;
+  });
+  tl.seek(0);
+}
+if (document.getElementById("root").classList.contains("mit-oskar")) platzFuerOskar();
 // Figuren-Layer (Three.js) wird über die Timeline gezeichnet, damit jedes Bild exakt zur Zeit passt
 const hookObj = {v:0};
 tl.to(hookObj, {v:1, duration: %%TOTAL%%, ease:"none", onUpdate(){ const tt = tl.time(); window.renderHooks.forEach(f => f(tt)); }}, 0);

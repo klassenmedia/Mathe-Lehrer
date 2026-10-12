@@ -42,7 +42,8 @@ Die Stimme (Piper „Thorsten“, offline) wird beim ersten Lauf heruntergeladen
 - Vorschau ohne Video: `cd videos/assets && python3 -m http.server 8765`, dann `http://localhost:8765/eule-vorschau.html#point:1` (oder `#rest:1`, `#wave:1`, `#links:1`, `#hoch:1`, `#schraeg:1`, `#live` = Kopf und Augen bewegen sich dauernd).
 - Bühne mit weichen Schatten: `buehne(canvas, 1920, 1080, { weich: true })`.
 - Video-Drehbuch mit der Eule: `videos/skripte_figuren.py` (Video `0-oskar-stellt-sich-vor`, gerendert: `Erklaervideos/00 Oskar stellt sich vor.mp4`, fürs Spiel `videos/0-oskar-stellt-sich-vor.mp4`). Neu: `cd videos && python3 render.py 0-oskar-stellt-sich-vor`.
-- Offen: Flügel noch feiner (Form/Muster), Oskar in die Erklärvideos einbauen (z. B. am Rand, zeigt auf die Rechnung), bessere Stimme.
+- **Oskar in allen Erklärvideos (01–13):** `videos/engine.py` gibt jedem Video ohne eigenes `three`-Skript automatisch Oskar rechts neben die Rechnung (`videos/oskar_rand.py`). Er spricht mit, zeigt bei jeder neuen Szene mit dem Flügel auf den Inhalt, schaut abwechselnd zur Rechnung und zu den Kindern, winkt am Anfang und hüpft am Ende. `template.html` (`platzFuerOskar`) verkleinert und verschiebt jede Szene einzeln so, dass ihr Inhalt links von Oskar bleibt (gemessen über die ganze Szene). Abschalten pro Video: `ohne_oskar=True` im Drehbuch. Test: `cd videos && python3 -m unittest test_engine`.
+- Offen: Flügel noch feiner (Form/Muster), bessere Stimme.
 
 ### Ältere Low-Poly-Figuren
 `videos/assets/figuren.js` baut drei eigene Low-Poly-Figuren mit Three.js: **Oskar** (Eule, Erklärer), **Robbi** (Rechenroboter), **Zacki** (Zahlen-Dino). Sie können sprechen (Mund synchron zur Stimme), blinzeln, winken, hüpfen und schauen. Jede Figur hat eine eigene Stimme (Tonhöhe). Ein Video mit Figuren bekommt im Drehbuch ein `three`-Skript und Sätze als `("oskar", "Text")` – Beispiel: `videos/skripte_figuren.py` (Video 00).

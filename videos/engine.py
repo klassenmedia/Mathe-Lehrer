@@ -7,6 +7,8 @@ import shutil
 import wave
 from pathlib import Path
 
+from oskar_rand import OSKAR_RAND_JS
+
 HERE = Path(__file__).parent
 ASSETS = HERE / "assets"
 
@@ -48,6 +50,25 @@ def synth(voice, cfg, text, path, pitch=1.0):
         tmp.replace(path)
     with wave.open(str(path), "rb") as r:
         return r.getnframes() / r.getframerate(), r.getframerate(), r.readframes(r.getnframes())
+
+
+def figuren_fuer(video):
+    """(three-Skript, Klasse für #root): eigenes Figuren-Skript, sonst Oskar am Rand, außer ohne_oskar."""
+    if video.get("three"):
+        return video["three"], ""
+    if video.get("ohne_oskar"):
+        return "", ""
+    return OSKAR_RAND_JS, "mit-oskar"
+
+
+def seite_fuellen(page, werte):
+    """Ersetzt %%NAME%%-Platzhalter; ein übrig gebliebener Platzhalter ist ein Fehler im Template oder hier."""
+    for name, wert in werte.items():
+        page = page.replace(f"%%{name}%%", wert)
+    rest = re.findall(r"%%[A-Z_]+%%", page)
+    if rest:
+        raise ValueError(f"Platzhalter nicht ersetzt: {rest}")
+    return page
 
 
 def build(video, out_root, voice, cfg, stimmen=None):
@@ -113,23 +134,19 @@ def build(video, out_root, voice, cfg, stimmen=None):
         for s in scenes)
 
     page = (HERE / "template.html").read_text(encoding="utf-8")
-    if video.get("three"):
+    three_src, root_class = figuren_fuer(video)
+    if three_src:
         three_canvas = '<canvas id="three-layer"></canvas>'
         three_js = ('<script>window.__hf = window.__hf || {}; window.__hf.buildReady = window.__hf.buildReady || {};'
                     'window.__hf.buildReady.figuren = new Promise(r => window.figurenFertig = r);</script>\n'
-                    '<script type="module">\n' + video["three"] + '\n</script>')
+                    '<script type="module">\n' + three_src + '\n</script>')
     else:
         three_canvas = three_js = ""
     meta = (f"<script>window.SAY = {json.dumps(say_tl)}; window.SCN = "
             f"{json.dumps([[s['start'], s['end']] for s in scenes])}; window.renderHooks = [];</script>")
-    page = (page.replace("%%TOTAL%%", str(total))
-                .replace("%%THREE_CANVAS%%", three_canvas)
-                .replace("%%THREE_JS%%", three_js)
-                .replace("%%META%%", meta)
-                .replace("%%TOPIC%%", html.escape(video["topic"]))
-                .replace("%%SCENES%%", scene_html)
-                .replace("%%CAPTIONS%%", cap_html)
-                .replace("%%SCENE_JS%%", scene_js))
+    page = seite_fuellen(page, {"TOTAL": str(total), "ROOT_CLASS": root_class, "THREE_CANVAS": three_canvas,
+                                "THREE_JS": three_js, "META": meta, "TOPIC": html.escape(video["topic"]),
+                                "SCENES": scene_html, "CAPTIONS": cap_html, "SCENE_JS": scene_js})
     (out / "index.html").write_text(page, encoding="utf-8")
     (out / "hyperframes.json").write_text(json.dumps(HF_CONFIG, indent=2), encoding="utf-8")
     return out, total
