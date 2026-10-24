@@ -56,3 +56,15 @@ Die Stimme (Piper „Thorsten high“, offline, CC0) wird beim ersten Lauf von h
 - Branch: `claude/mathe-lernspiel-grundschule-wwonn7`. Spiel = `index.html`, Videos-Quellcode = `videos/`, fertige Videos in voller Qualität = `Erklaervideos/`, komprimierte Kopien fürs Spiel = `videos/*.mp4` (CRF 28).
 - Neu rendern: `cd videos && python3 render.py [video-id …]`, danach für das Spiel mit ffmpeg komprimieren (`-crf 28 -tune animation`).
 - Offen: bessere Stimme. Kostenlos ist aktuell Piper „Thorsten low“. Besser wäre ElevenLabs (z. B. über Higgsfield, ca. 100–150 Credits für alle Videos) oder Piper „thorsten high“ (braucht Zugriff auf huggingface.co).
+
+## Zauberwürfel-Erklärvideo (`rubiks/`)
+Erklärvideo „Zauberwürfel lösen – alle Methoden“ (ca. 16 Min., Deutsch, mit Untertiteln): Aufbau, Zugschreibweise (R L U D F B, ’, 2, M E S, r u f …, x y z), Anfänger-Methode in 7 Schritten mit allen Zügen, dann CFOP (F2L, OLL/Sune, PLL/T-, Y-, U-Perm), Roux, ZZ, Petrus, Blindlösen, andere Würfel, Gottes Zahl und eine Computer-Lösung (Kociemba-Zwei-Phasen) eines Zufalls-Scrambles.
+- Fertiges Video: `Erklaervideos/14 Zauberwuerfel loesen.mp4`.
+- Alle Zugfolgen und Ausgangsstellungen werden mit einem eigenen Würfelmodell (`rubiks/cube.py`, `cases.py`) geprüft; die Stellungen im Video sind „rückwärts gerechnet“ (Aufbau = Umkehrung der gezeigten Folge), die Computer-Lösung wird mit `RubikTwoPhase` berechnet und im Modell gegengeprüft.
+- Neu erzeugen: `pip install RubikTwoPhase numpy`, `apt install espeak-ng ffmpeg`, Node + Playwright (Chromium). Dann (aus dem Repo-Wurzelordner, weil der Solver seine Tabellen relativ zum Arbeitsordner anlegt – einmalig ca. 15 Min):
+  ```bash
+  python3 rubiks/script.py          # Drehbuch, Sprache (espeak-ng), build/scenes.json
+  node rubiks/render.js 0,1,2,…     # Szenen als Clips rendern (mehrere Prozesse parallel möglich)
+  rubiks/zusammenbauen.sh "Erklaervideos/14 Zauberwuerfel loesen.mp4"
+  ```
+- Stimme: `espeak-ng` (maschinell, weil die Piper-Stimmen hier nicht ladbar waren). Für eine natürlichere Stimme `tts()` in `rubiks/script.py` austauschen.

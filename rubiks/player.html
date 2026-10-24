@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Zauberwürfel</title>
+<style>
+@font-face{font-family:Andika;font-weight:400;src:url(../videos/assets/andika-latin-400-normal.woff2)}
+@font-face{font-family:Andika;font-weight:700;src:url(../videos/assets/andika-latin-700-normal.woff2)}
+@font-face{font-family:Grand;font-weight:800;src:url(../videos/assets/grandstander-latin-800-normal.woff2)}
+*{box-sizing:border-box;margin:0}
+html,body{width:1280px;height:720px;overflow:hidden;background:#101a33}
+#stage{position:relative;width:1280px;height:720px;font-family:Andika,sans-serif;color:#fff;
+  background:radial-gradient(900px 600px at 78% 40%,#24386b 0%,#162347 55%,#0e1730 100%)}
+canvas{position:absolute;right:0;top:0;width:760px;height:600px}
+#kicker{position:absolute;left:56px;top:40px;font:700 22px Andika;letter-spacing:.14em;text-transform:uppercase;color:#ffd24a}
+#title{position:absolute;left:56px;top:76px;width:600px;font:800 50px/1.08 Grand;color:#fff}
+#bul{position:absolute;left:56px;top:210px;width:560px;list-style:none;padding:0}
+#bul li{font:400 25px/1.28 Andika;margin:0 0 11px;padding-left:34px;position:relative;opacity:0}
+#bul li:before{content:"";position:absolute;left:0;top:11px;width:16px;height:16px;border-radius:5px;background:#ffd24a}
+#bul li b{color:#ffd24a;font-weight:700}
+#chap{position:absolute;right:40px;top:30px;font:700 18px Andika;background:#ffffff1f;border-radius:20px;padding:6px 16px;color:#cfe0ff}
+#alg{position:absolute;left:0;right:0;bottom:104px;text-align:center;font:700 40px Andika;letter-spacing:.02em;opacity:0}
+#alg .name{display:block;font:400 21px Andika;color:#9fb6e8;margin-bottom:6px;letter-spacing:.04em}
+#alg span.t{display:inline-block;margin:0 var(--m,7px);padding:2px var(--p,10px);border-radius:10px;color:#8da3d6;transition:none}
+#alg span.t.done{color:#ffffff}
+#alg span.t.cur{background:#ffd24a;color:#17224a}
+#sub{position:absolute;left:90px;right:90px;bottom:26px;height:70px;text-align:center;font:400 26px/1.25 Andika;
+  color:#fff;display:flex;align-items:center;justify-content:center;text-shadow:0 2px 6px #000a}
+#bar{position:absolute;left:0;bottom:0;height:6px;background:#ffd24a}
+</style></head><body>
+<div id="stage">
+  <canvas id="c" width="1520" height="1200"></canvas>
+  <div id="kicker"></div><div id="title"></div><ul id="bul"></ul><div id="chap"></div>
+  <div id="alg"></div><div id="sub"></div><div id="bar"></div>
+</div>
+<script type="module">
+import * as THREE from '../videos/assets/three.module.js';
+
+const COL={U:0xffd500,D:0xf2f2f2,F:0x0a4fb8,B:0x0a9a4a,R:0xc4122f,L:0xff6a00};
+const NORM={U:[0,1,0],D:[0,-1,0],R:[1,0,0],L:[-1,0,0],F:[0,0,1],B:[0,0,-1]};
+const MOVES={U:['y',[1],-1],D:['y',[-1],1],E:['y',[0],1],R:['x',[1],-1],L:['x',[-1],1],M:['x',[0],1],
+ F:['z',[1],-1],B:['z',[-1],1],S:['z',[0],-1],u:['y',[0,1],-1],d:['y',[-1,0],1],r:['x',[0,1],-1],l:['x',[-1,0],1],
+ f:['z',[0,1],-1],b:['z',[-1,0],1],x:['x',[-1,0,1],-1],y:['y',[-1,0,1],-1],z:['z',[-1,0,1],-1]};
+const AX={x:0,y:1,z:2};
+const AXV={x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),z:new THREE.Vector3(0,0,1)};
+
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,preserveDrawingBuffer:true});
+renderer.setClearColor(0x000000,0);
+renderer.setPixelRatio(1);renderer.setSize(1520,1200,false);
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(30,760/600,0.1,100);
+scene.add(new THREE.HemisphereLight(0xffffff,0x6a7aa8,1.9));
+const sun=new THREE.DirectionalLight(0xffffff,1.6);sun.position.set(4,7,6);scene.add(sun);
+const sun2=new THREE.DirectionalLight(0xbcd0ff,.6);sun2.position.set(-6,2,-4);scene.add(sun2);
+
+function roundRect(w,r){const s=new THREE.Shape(),h=w/2;
+ s.moveTo(-h+r,-h);s.lineTo(h-r,-h);s.quadraticCurveTo(h,-h,h,-h+r);s.lineTo(h,h-r);s.quadraticCurveTo(h,h,h-r,h);
+ s.lineTo(-h+r,h);s.quadraticCurveTo(-h,h,-h,h-r);s.lineTo(-h,-h+r);s.quadraticCurveTo(-h,-h,-h+r,-h);return new THREE.ShapeGeometry(s)}
+const stickerGeo=roundRect(.86,.14);
+{const p=stickerGeo.attributes.position,uv=stickerGeo.attributes.uv;for(let i=0;i<p.count;i++)uv.setXY(i,p.getX(i)/.86+.5,p.getY(i)/.86+.5)}
+const bodyGeo=new THREE.BoxGeometry(.97,.97,.97);
+const bodyMat=new THREE.MeshStandardMaterial({color:0x0c0c10,roughness:.6});
+
+function labelTex(letter,color){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+ g.fillStyle='#'+color.toString(16).padStart(6,'0');g.fillRect(0,0,128,128);
+ g.fillStyle=(letter==='U'||letter==='D')?'#222':'#fff';g.font='700 84px Andika, sans-serif';g.textAlign='center';g.textBaseline='middle';
+ g.fillText(letter,64,70);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
+
+const root=new THREE.Group();scene.add(root);
+let cubies=[];  // {g, pos:[x,y,z], q:Quaternion, stickers:[{mesh,face}]}
+function build(labels,hl){
+  root.clear();cubies=[];
+  const hlset=hl?new Set(hl.map(h=>[...h].sort().join(''))):null;
+  for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++){
+    if(!x&&!y&&!z)continue;
+    const g=new THREE.Group();g.add(new THREE.Mesh(bodyGeo,bodyMat));
+    const id=Object.keys(NORM).filter(f=>{const n=NORM[f];return n[0]*x+n[1]*y+n[2]*z===1}).sort().join('');
+    const dim=hlset&&!hlset.has(id);
+    for(const f in NORM){const n=NORM[f];if(n[0]*x+n[1]*y+n[2]*z!==1)continue;
+      const centre=(Math.abs(x)+Math.abs(y)+Math.abs(z))===1;
+      const mat=(labels&&centre)?new THREE.MeshStandardMaterial({map:labelTex(f,COL[f]),roughness:.3,metalness:0}):new THREE.MeshStandardMaterial({color:dim?new THREE.Color(COL[f]).lerp(new THREE.Color(0x3a4258),.72):COL[f],roughness:.3,metalness:0});
+      const m=new THREE.Mesh(stickerGeo,mat);
+      m.position.set(n[0]*.486,n[1]*.486,n[2]*.486);
+      m.lookAt(n[0]*2,n[1]*2,n[2]*2);g.add(m)}
+    root.add(g);cubies.push({g,pos:[x,y,z],q:new THREE.Quaternion(),p0:[x,y,z]});
+  }
+  place(null);
+}
+function rotInt(v,ax,k){let [x,y,z]=v;k=((k%4)+4)%4;for(let i=0;i<k;i++){
+ if(ax===0)[x,y,z]=[x,-z,y];else if(ax===1)[x,y,z]=[z,y,-x];else[x,y,z]=[-y,x,z]}return [x,y,z]}
+function place(cur){ // cur={ax,layers,ang}
+  for(const c of cubies){
+    let p=new THREE.Vector3(...c.pos),q=c.q.clone();
+    if(cur&&cur.layers.includes(c.pos[AX[cur.ax]])){
+      const r=new THREE.Quaternion().setFromAxisAngle(AXV[cur.ax],cur.ang);
+      p.applyQuaternion(r);q.premultiply(r);
+    }
+    c.g.position.copy(p);c.g.quaternion.copy(q);
+  }
+}
+function applyMove(m,n){
+ if(m.startsWith('t:')){const [p,sg]=m.slice(2).split(':');const pos=p.split(',').map(Number);const c=cubies.find(c=>c.pos.join()===pos.join());
+  const S=pos,sign=(sg==='+'?1:-1)*S[0]*S[1]*S[2];
+  const P=sign>0?[[0,0,1],[1,0,0],[0,1,0]]:[[0,1,0],[0,0,1],[1,0,0]];
+  const R=P.map((row,i)=>row.map((v,j)=>S[i]*v*S[j]));
+  const M=new THREE.Matrix4().set(R[0][0],R[0][1],R[0][2],0,R[1][0],R[1][1],R[1][2],0,R[2][0],R[2][1],R[2][2],0,0,0,0,1);
+  c.q.premultiply(new THREE.Quaternion().setFromRotationMatrix(M));return}
+ const [ax,layers,q]=MOVES[m];const a=AX[ax];
+ for(const c of cubies){if(layers.includes(c.pos[a])){c.pos=rotInt(c.pos,a,q*n);
+  c.q.premultiply(new THREE.Quaternion().setFromAxisAngle(AXV[ax],q*n*Math.PI/2))}}}
+function parse(s){return s.trim()?s.trim().split(/\s+/).map(t=>{if(t.startsWith('t:'))return [t,1,t];const m=t[0];let n=1;if(t.endsWith("'"))n=-1;else if(t.endsWith('2'))n=2;return [m,n,t]}):[]}
+
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+let S=null,toks=[],tl=[],applied=0,scenes=null;
+const $=id=>document.getElementById(id);
+
+window.loadScenes=async()=>{scenes=await (await fetch('build/scenes.json')).json();await document.fonts.ready;return scenes.length};
+window.loadScene=(i)=>{
+  S=scenes[i];build(!!S.labels,S.hl);
+  for(const [m,n] of parse(S.setup||''))applyMove(m,n);
+  place(null);
+  toks=parse(S.moves||'');tl=[];let t=S.mstart;
+  for(const [m,n,txt] of toks){const d=(n===2?1.55:1)*S.mstep;tl.push([t,t+d]);t+=d+S.mgap}
+  applied=0;
+  $('kicker').textContent=S.kicker||'';$('title').textContent=S.title||'';$('chap').textContent=S.chap||'';
+  $('bul').innerHTML=(S.bullets||[]).map(b=>`<li>${b}</li>`).join('');
+  const a=$('alg');
+  const nt=toks.length,fs=Math.max(20,Math.min(40,Math.floor(1200/(Math.max(nt,1)*1.75))));
+  a.style.fontSize=fs+'px';a.style.setProperty('--m',(fs*.17)+'px');a.style.setProperty('--p',(fs*.25)+'px');
+  if(toks.length&&S.showalg!==false){a.innerHTML=(S.algname?`<span class="name">${S.algname}</span>`:'')+toks.map(([m,n,t],k)=>`<span class="t" id="tk${k}">${t.replace("'","’")}</span>`).join('')}else a.innerHTML='';
+  return S.dur;
+};
+window.renderAt=(t)=>{
+  const S0=S;
+  // Züge
+  let k=0;while(k<toks.length&&t>=tl[k][1])k++;
+  while(applied<k){applyMove(toks[applied][0],toks[applied][1]);applied++}
+  let cur=null;
+  if(k<toks.length&&t>=tl[k][0]){const f=(t-tl[k][0])/(tl[k][1]-tl[k][0]);const [m,n]=toks[k];const [ax,layers,q]=MOVES[m];
+    cur={ax,layers,ang:q*n*Math.PI/2*ease(f)}}
+  place(cur);
+  // Algorithmus-Leiste
+  const a=$('alg');
+  a.style.opacity=toks.length&&S.showalg!==false?Math.min(1,Math.max(0,(t-S.mstart+.6)/.5)):0;
+  for(let i=0;i<toks.length;i++){const e=document.getElementById('tk'+i);if(!e)continue;
+    e.className='t'+(i<k?' done':'')+((i===k&&t>=tl[k][0])?' cur':'')}
+  // Kamera
+  let elv=S.el;if(S.elto!==undefined&&toks.length){const f=Math.min(1,Math.max(0,(t-tl[tl.length-1][1]-.2)/1.3));elv=S.el+(S.elto-S.el)*ease(f)}
+  const az=(S.az+(S.spin||0)*t+(S.sway||0)*Math.sin(t*.45))*Math.PI/180,el=elv*Math.PI/180,d=S.dist||12.2;
+  cam.position.set(d*Math.cos(el)*Math.sin(az),d*Math.sin(el),d*Math.cos(el)*Math.cos(az));cam.lookAt(0,0,0);
+  const sc=S.scale||1;root.scale.setScalar(sc);
+  // Einblenden
+  const fin=Math.min(1,t/.5),fout=Math.min(1,(S.dur-t)/.4);
+  $('stage').style.opacity=Math.max(0,Math.min(fin,fout));
+  // Stichpunkte
+  [...$('bul').children].forEach((li,i)=>{const bt=S.btimes[i];li.style.opacity=Math.min(1,Math.max(0,(t-bt)/.4));li.style.transform=`translateY(${(1-Math.min(1,Math.max(0,(t-bt)/.4)))*14}px)`});
+  // Untertitel
+  let sub='';for(const [a0,a1,tx] of S.subs){if(t>=a0&&t<a1){sub=tx}}
+  $('sub').textContent=sub;
+  $('bar').style.width=((S.gstart+t)/S.total*1280)+'px';
+  renderer.render(scene,cam);
+};
+window.sceneCount=()=>scenes.length;
+</script></body></html>
