@@ -39,6 +39,7 @@ const MOVES={U:['y',[1],-1],D:['y',[-1],1],E:['y',[0],1],R:['x',[1],-1],L:['x',[
  F:['z',[1],-1],B:['z',[-1],1],S:['z',[0],-1],u:['y',[0,1],-1],d:['y',[-1,0],1],r:['x',[0,1],-1],l:['x',[-1,0],1],
  f:['z',[0,1],-1],b:['z',[-1,0],1],x:['x',[-1,0,1],-1],y:['y',[-1,0,1],-1],z:['z',[-1,0,1],-1]};
 const AX={x:0,y:1,z:2};
+const DE={U:'O',D:'U',F:'V',B:'H',u:'o',d:'u',f:'v',b:'h'};const de=t=>(DE[t[0]]||t[0])+t.slice(1);
 const AXV={x:new THREE.Vector3(1,0,0),y:new THREE.Vector3(0,1,0),z:new THREE.Vector3(0,0,1)};
 
 const canvas=document.getElementById('c');
@@ -62,7 +63,7 @@ const bodyMat=new THREE.MeshStandardMaterial({color:0x0c0c10,roughness:.6});
 function labelTex(letter,color){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
  g.fillStyle='#'+color.toString(16).padStart(6,'0');g.fillRect(0,0,128,128);
  g.fillStyle=(letter==='U'||letter==='D')?'#222':'#fff';g.font='700 84px Andika, sans-serif';g.textAlign='center';g.textBaseline='middle';
- g.fillText(letter,64,70);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
+ g.fillText(DE[letter]||letter,64,70);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
 
 const root=new THREE.Group();scene.add(root);
 let cubies=[];  // {g, pos:[x,y,z], q:Quaternion, stickers:[{mesh,face}]}
@@ -125,7 +126,7 @@ window.loadScene=(i)=>{
   const a=$('alg');
   const nt=toks.length,fs=Math.max(20,Math.min(40,Math.floor(1200/(Math.max(nt,1)*1.75))));
   a.style.fontSize=fs+'px';a.style.setProperty('--m',(fs*.17)+'px');a.style.setProperty('--p',(fs*.25)+'px');
-  if(toks.length&&S.showalg!==false){a.innerHTML=(S.algname?`<span class="name">${S.algname}</span>`:'')+toks.map(([m,n,t],k)=>`<span class="t" id="tk${k}">${t.replace("'","’")}</span>`).join('')}else a.innerHTML='';
+  if(toks.length&&S.showalg!==false){a.innerHTML=(S.algname?`<span class="name">${S.algname}</span>`:'')+toks.map(([m,n,t],k)=>`<span class="t" id="tk${k}">${de(t).replace("'","’")}</span>`).join('')}else a.innerHTML='';
   return S.dur;
 };
 window.renderAt=(t)=>{
